@@ -129,6 +129,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fTruthTree->Branch("true_pdg", &true_pdg);
     fTruthTree->Branch("true_nproton", &true_nproton);
 
+    fTruthTree->Branch("spill_index", &spill_index);
+    fTruthTree->Branch("file_index", &file_index);
     fTruthTree->Branch("event", &event);
     fTruthTree->Branch("run", &run);
     fTruthTree->Branch("subrun", &subrun);
@@ -177,6 +179,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
             if(i % incr == 0)
             std::cout << "Spill #: " << i << std::endl;
+
+            int spill_num = i;
 
             const auto num_ixn = sr->mc.nu.size();
 
@@ -264,6 +268,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         true_pdg.push_back(true_part.pdg);
                         true_nproton.push_back(numproton);
                         
+                        spill_index.push_back(spill_num);
+                        file_index.push_back(file_num);
                         event.push_back(sr->meta.nd_lar.event);
                         run.push_back(sr->meta.nd_lar.run);
                         subrun.push_back(sr->meta.nd_lar.subrun);
