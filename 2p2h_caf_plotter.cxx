@@ -10,6 +10,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/StandardRecord.h"
 #include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
@@ -196,6 +197,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                 unsigned int npi = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
 
+                bool is_contained = true;
+
                 //Cut for event: 0pi and >=2 proton
                 if(truth_ixn.nproton >= 2 and npi == 0)
                 {
@@ -209,10 +212,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                         if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
                             numproton--;
-                        
                     }
 
-                    bool is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
+                    is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
 
                     if(numproton < 2 or is_contained == false)
                         continue;
@@ -226,7 +228,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                         // Make cuts for individual particles if needed
                         // Cut phantom particles
-                        if(true_part.pdg == 0)
+                        if(true_part.pdg == 0 or std::isnan(sr->mc.nu[ixn].prim[ipart].start_pos.x))
                             continue;
 
                         // Finally get or calculate various truth quantities
