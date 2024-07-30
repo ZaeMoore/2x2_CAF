@@ -101,6 +101,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     std::vector<int> spill_index;
     std::vector<int> file_index;
+    std::vector<int> interaction_id;
     std::vector<int> event;
     std::vector<int> run;
     std::vector<int> subrun;
@@ -132,6 +133,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     fTruthTree->Branch("spill_index", &spill_index);
     fTruthTree->Branch("file_index", &file_index);
+    fTruthTree->Branch("interaction_id", &interaction_id);
     fTruthTree->Branch("event", &event);
     fTruthTree->Branch("run", &run);
     fTruthTree->Branch("subrun", &subrun);
@@ -272,6 +274,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         
                         spill_index.push_back(spill_num);
                         file_index.push_back(file_num);
+                        interaction_id.push_back(true_part.interaction_id);
                         event.push_back(sr->meta.nd_lar.event);
                         run.push_back(sr->meta.nd_lar.run);
                         subrun.push_back(sr->meta.nd_lar.subrun);
