@@ -202,7 +202,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 bool is_contained = true;
 
                 //Cut for event: 0pi and >=2 proton
-                if(truth_ixn.nproton >= 2 and npi == 0)
+                if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode == 10)
                 {
                     unsigned int numproton = truth_ixn.nproton;
 
