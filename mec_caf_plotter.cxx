@@ -15,12 +15,6 @@
 #include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
 
-float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) {
-  float product = 0;
-  for (int i = 0; i < Dimension; i++)
-    product = product + vector_a[i] * vector_b[i];
-  return product;
-}
 
 bool contained(double x, double y, double z){
     double tpc_dist = 8.0; // distance from the tpc walls for containment cuts
@@ -96,15 +90,19 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  true_track_end_x;
     std::vector< double >  true_track_end_y;
     std::vector< double >  true_track_end_z;
-    std::vector< int >     true_pdg;
-    std::vector< int >     true_nproton;
-    std::vector< int >     true_nmuon;
-    std::vector< int >     spill_index;
-    std::vector< int >     file_index;
-    std::vector< int >     interaction_id;
-    std::vector< int >     event;
-    std::vector< int >     run;
-    std::vector< int >     subrun;
+    std::vector< int >  true_pdg;
+    std::vector< int >  true_nproton;
+    std::vector< int >  true_nmuon;
+    std::vector< int >  true_npip;
+    std::vector< int >  true_npi0;
+    std::vector< int >  true_npim;
+    std::vector< int >  true_npi; 
+
+    std::vector<int> spill_index;
+    std::vector<int> file_index;
+    std::vector<int> event;
+    std::vector<int> run;
+    std::vector<int> subrun;
     std::vector<std::string> caf_file_name;
 
 
@@ -131,9 +129,13 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fTruthTree->Branch("true_pdg", &true_pdg);
     fTruthTree->Branch("true_nproton", &true_nproton);
     fTruthTree->Branch("true_nmuon", &true_nmuon);
+    fTruthTree->Branch("true_npip", &true_npip);
+    fTruthTree->Branch("true_npi0", &true_npi0);
+    fTruthTree->Branch("true_npim", &true_npim);
+    fTruthTree->Branch("true_npi", &true_npi);
+
     fTruthTree->Branch("spill_index", &spill_index);
     fTruthTree->Branch("file_index", &file_index);
-    fTruthTree->Branch("interaction_id", &interaction_id);
     fTruthTree->Branch("event", &event);
     fTruthTree->Branch("run", &run);
     fTruthTree->Branch("subrun", &subrun);
@@ -150,11 +152,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     //negative y-direction 
     const auto y_minus_dir = TVector3(0, -1.0, 0.0);
-
-    //Center of the 2x2 LAr
-    //const float tpc_x = 0.0;
-    //const float tpc_y = 0.0; // -268.0;
-    //const float tpc_z = 0.0; //(1333.5 + 1266.5) / 2.0;
 
     const auto t_start{std::chrono::steady_clock::now()};
     auto file_num = 0;
@@ -197,28 +194,17 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 if(truth_ixn.targetPDG != 1000180400)
                     continue;
 
-                unsigned int npi = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
+                int npi = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
 
                 bool is_contained = true;
 
-                //Cut for event: 0pi and >=2 proton
-                if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode == 10)
+                if(truth_ixn.mode == 10)
                 {
                     int nproton = truth_ixn.nproton;
+
                     int nmuon = 0;
 
-                    // Loop over each particle in interaction and cut events with low energy particles
-                    // Cut phantom protons
-                    /**
-                    for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
-                    {
-                        auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
-
-                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
-                            numproton--;
-                    }
-                    */
-
+                    // Loop over each particle in interaction and count muons
                     for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
                     {
                         if(sr->mc.nu[ixn].prim[ipart].pdg == 13)
@@ -227,7 +213,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
 
-                    if(nproton < 2 or is_contained == false or nmuon == 0)
+                    if(is_contained == false)
                         continue;
 
                     // Loop over each particle in interaction
@@ -281,9 +267,13 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         true_pdg.push_back(true_part.pdg);
                         true_nproton.push_back(nproton);
                         true_nmuon.push_back(nmuon);
+                        true_npip.push_back(truth_ixn.npip);
+                        true_npi0.push_back(truth_ixn.npi0);
+                        true_npim.push_back(truth_ixn.npim);
+                        true_npi.push_back(npi);
+                        
                         spill_index.push_back(spill_num);
                         file_index.push_back(file_num);
-                        interaction_id.push_back(true_part.interaction_id);
                         event.push_back(sr->meta.nd_lar.event);
                         run.push_back(sr->meta.nd_lar.run);
                         subrun.push_back(sr->meta.nd_lar.subrun);
@@ -303,7 +293,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_truth_sample";
+    std::string file_name = "mec_truth_sample";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
