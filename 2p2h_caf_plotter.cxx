@@ -296,14 +296,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             }
 
         }
-
+        caf_file->Close();
     }
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_truth_sample";
+    std::string file_name = "2p2h_truth";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
