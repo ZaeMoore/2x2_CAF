@@ -68,12 +68,12 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     }
 
     //Create TChain and add files to it
-    TChain* caf_chain = new TChain("cafTree");
-    for(const auto& file : root_list)
-    {
-        std::cout << "Adding " << file << " to TChain." << std::endl;
-        caf_chain->Add(file.c_str());
-    }
+    //TChain* caf_chain = new TChain("cafTree");
+    //for(const auto& file : root_list)
+    //{
+    //    std::cout << "Adding " << file << " to TChain." << std::endl;
+    //    caf_chain->Add(file.c_str());
+    //}
 
     std::cout << "Finished adding files..." << std::endl;
 
@@ -303,7 +303,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_truth";
+    std::string file_name = "2p2h_truth_test";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
