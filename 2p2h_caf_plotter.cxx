@@ -209,16 +209,15 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     // Loop over each particle in interaction and cut events with low energy particles
                     // Cut phantom protons
-                    /**
                     for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
                     {
                         auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
 
                         if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
-                            numproton--;
-                    }
-                    */
+                            nproton--;
+                    }   
 
+                    // Count number of muons
                     for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
                     {
                         if(sr->mc.nu[ixn].prim[ipart].pdg == 13)
@@ -227,6 +226,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
 
+                    // If # protons above 5 MeV are <2, the interaction isn't contained, or there are 0 muons, skip this event
                     if(nproton < 2 or is_contained == false or nmuon == 0)
                         continue;
 
@@ -240,6 +240,11 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         // Make cuts for individual particles if needed
                         // Cut phantom particles
                         if(true_part.pdg == 0 or std::isnan(sr->mc.nu[ixn].prim[ipart].start_pos.x))
+                            continue;
+
+                        // Cut protons below 5 MeV
+                        auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
+                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
                             continue;
 
                         // Finally get or calculate various truth quantities
@@ -303,7 +308,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_truth_test";
+    std::string file_name = "2p2h_truth";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
