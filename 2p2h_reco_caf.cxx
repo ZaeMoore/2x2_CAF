@@ -110,36 +110,38 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
 
     // DEFINE: TTree and TBranches to go in output ROOT file
-    TTree *fTruthTree=new TTree("TruthTree", "Truth Variables");
-    fTruthTree->Branch("true_energy", &true_energy);
-    fTruthTree->Branch("true_p_x", &true_p_x);
-    fTruthTree->Branch("true_p_y", &true_p_y);
-    fTruthTree->Branch("true_p_z", &true_p_z);
-    fTruthTree->Branch("true_p_mag", &true_p_mag);
-    fTruthTree->Branch("true_length", &true_length);
-    fTruthTree->Branch("true_angle", &true_angle);
-    fTruthTree->Branch("true_angle_rot", &true_angle_rot);
-    fTruthTree->Branch("true_angle_incl", &true_angle_incl);
-    fTruthTree->Branch("true_angle_x", &true_angle_x);
-    fTruthTree->Branch("true_angle_y", &true_angle_y);
-    fTruthTree->Branch("true_angle_z", &true_angle_z);
-    fTruthTree->Branch("true_track_start_x", &true_track_start_x);
-    fTruthTree->Branch("true_track_start_y", &true_track_start_y);
-    fTruthTree->Branch("true_track_start_z", &true_track_start_z);
-    fTruthTree->Branch("true_track_end_x", &true_track_end_x);
-    fTruthTree->Branch("true_track_end_y", &true_track_end_y);
-    fTruthTree->Branch("true_track_end_z", &true_track_end_z);
-    fTruthTree->Branch("true_pdg", &true_pdg);
-    fTruthTree->Branch("true_ixn_charged_track_mult", &true_ixn_charged_track_mult);
-    fTruthTree->Branch("true_nproton", &true_nproton);
-    fTruthTree->Branch("true_nmuon", &true_nmuon);
-    fTruthTree->Branch("spill_index", &spill_index);
-    fTruthTree->Branch("file_index", &file_index);
-    fTruthTree->Branch("interaction_id", &interaction_id);
-    fTruthTree->Branch("event", &event);
-    fTruthTree->Branch("run", &run);
-    fTruthTree->Branch("subrun", &subrun);
-    fTruthTree->Branch("caf_file_name", &caf_file_name);
+    TTree *fcafTree=new TTree("cafTree", "caf reco and truth variables");
+
+
+    fcafTree->Branch("true_energy", &true_energy);
+    fcafTree->Branch("true_p_x", &true_p_x);
+    fcafTree->Branch("true_p_y", &true_p_y);
+    fcafTree->Branch("true_p_z", &true_p_z);
+    fcafTree->Branch("true_p_mag", &true_p_mag);
+    fcafTree->Branch("true_length", &true_length);
+    fcafTree->Branch("true_angle", &true_angle);
+    fcafTree->Branch("true_angle_rot", &true_angle_rot);
+    fcafTree->Branch("true_angle_incl", &true_angle_incl);
+    fcafTree->Branch("true_angle_x", &true_angle_x);
+    fcafTree->Branch("true_angle_y", &true_angle_y);
+    fcafTree->Branch("true_angle_z", &true_angle_z);
+    fcafTree->Branch("true_track_start_x", &true_track_start_x);
+    fcafTree->Branch("true_track_start_y", &true_track_start_y);
+    fcafTree->Branch("true_track_start_z", &true_track_start_z);
+    fcafTree->Branch("true_track_end_x", &true_track_end_x);
+    fcafTree->Branch("true_track_end_y", &true_track_end_y);
+    fcafTree->Branch("true_track_end_z", &true_track_end_z);
+    fcafTree->Branch("true_pdg", &true_pdg);
+    fTruthTree->Branch("true_ixn_charged_track_mult", &true_ixn_charged_track_mult)
+    fcafTree->Branch("true_nproton", &true_nproton);
+    fcafTree->Branch("true_nmuon", &true_nmuon);
+    fcafTree->Branch("spill_index", &spill_index);
+    fcafTree->Branch("file_index", &file_index);
+    fcafTree->Branch("interaction_id", &interaction_id);
+    fcafTree->Branch("event", &event);
+    fcafTree->Branch("run", &run);
+    fcafTree->Branch("subrun", &subrun);
+    fcafTree->Branch("caf_file_name", &caf_file_name);
 
 
     //Beam direction -3.343 degrees in y
@@ -204,7 +206,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 bool is_contained = true;
 
                 //Cut for event: 0pi and >=2 proton
-                if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode != 10) //NOT MEC events
+                if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode == 10)
                 {
                     int nproton = truth_ixn.nproton;
                     int nmuon = 0;
@@ -286,7 +288,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         true_track_end_y.push_back(true_part.end_pos.y);
                         true_track_end_z.push_back(true_part.end_pos.z);
                         true_pdg.push_back(true_part.pdg);
-                        // true_ixn_charged_track_mult.push_back(true_ixn_trks); Do the stuff to make this line work
+                        // true_ixn_charged_track_mult.push_back(true_ixn_trks);
                         true_nproton.push_back(nproton);
                         true_nmuon.push_back(nmuon);
                         spill_index.push_back(spill_num);
@@ -311,14 +313,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_MEC_truth";
+    std::string file_name = "2p2h_reco_sample";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
 
     // POPULATE: Fill TTree and write to output ROOT file
-    fTruthTree->Fill();
-    fTruthTree->Write();
+    fcafTree->Fill();
+    fcafTree->Write();
     
     std::cout << "Filled and wrote TTree." << std::endl;
 
