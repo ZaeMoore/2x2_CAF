@@ -77,8 +77,29 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     std::cout << "Finished adding files..." << std::endl;
 
-    // DEFINE: Vectors to hold information to keep in output TTree file 
-    std::vector<double> true_energy;
+    // DEFINE: Vectors to hold information to keep in output TTree file
+    std::vector< double >  reco_energy;
+    std::vector< double >  reco_p_x; 
+    std::vector< double >  reco_p_y; 
+    std::vector< double >  reco_p_z;
+    std::vector< double >  reco_p_mag;
+    std::vector< double >  reco_length;
+    std::vector< double >  reco_angle;
+    std::vector< double >  reco_angle_rot;
+    std::vector< double >  reco_angle_incl;
+    std::vector< double >  reco_angle_x;
+    std::vector< double >  reco_angle_y;
+    std::vector< double >  reco_angle_z;
+    std::vector< double >  reco_track_start_x;
+    std::vector< double >  reco_track_start_y;
+    std::vector< double >  reco_track_start_z;
+    std::vector< double >  reco_track_end_x;
+    std::vector< double >  reco_track_end_y;
+    std::vector< double >  reco_track_end_z;
+    std::vector< int >     reco_pdg;
+    std::vector< int >     reco_ixn_charged_track_mult;
+
+    std::vector< double >  true_energy;
     std::vector< double >  true_p_x; 
     std::vector< double >  true_p_y; 
     std::vector< double >  true_p_z;
@@ -97,12 +118,16 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  true_track_end_y;
     std::vector< double >  true_track_end_z;
     std::vector< int >     true_pdg;
-    std::vector< int >     true_ixn_charged_track_mult;
     std::vector< int >     true_nproton;
     std::vector< int >     true_nmuon;
+    std::vector< int >     interaction_id;
+    std::vector< int >     true_ixn_charged_track_mult;
+
+    std::vector< double >  overlap;
+    std::vector< double >  true_ixn_index;
+    std::vector< double >  reco_ixn_index;
     std::vector< int >     spill_index;
     std::vector< int >     file_index;
-    std::vector< int >     interaction_id;
     std::vector< int >     event;
     std::vector< int >     run;
     std::vector< int >     subrun;
@@ -110,38 +135,61 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
 
     // DEFINE: TTree and TBranches to go in output ROOT file
-    TTree *fcafTree=new TTree("cafTree", "caf reco and truth variables");
+    TTree *fRecoTree=new TTree("RecoTree", "Caf reco and truth variables");
+    fRecoTree->Branch("reco_energy", &reco_energy);
+    fRecoTree->Branch("reco_p_x", &reco_p_x);
+    fRecoTree->Branch("reco_p_y", &reco_p_y);
+    fRecoTree->Branch("reco_p_z", &reco_p_z);
+    fRecoTree->Branch("reco_p_mag", &reco_p_mag);
+    fRecoTree->Branch("reco_length", &reco_length);
+    fRecoTree->Branch("reco_angle", &reco_angle);
+    fRecoTree->Branch("reco_angle_rot", &reco_angle_rot);
+    fRecoTree->Branch("reco_angle_incl", &reco_angle_incl);
+    fRecoTree->Branch("reco_angle_x", &reco_angle_x);
+    fRecoTree->Branch("reco_angle_y", &reco_angle_y);
+    fRecoTree->Branch("reco_angle_z", &reco_angle_z);
+    fRecoTree->Branch("reco_track_start_x", &reco_track_start_x);
+    fRecoTree->Branch("reco_track_start_y", &reco_track_start_y);
+    fRecoTree->Branch("reco_track_start_z", &reco_track_start_z);
+    fRecoTree->Branch("reco_track_end_x", &reco_track_end_x);
+    fRecoTree->Branch("reco_track_end_y", &reco_track_end_y);
+    fRecoTree->Branch("reco_track_end_z", &reco_track_end_z);
+    fRecoTree->Branch("reco_pdg", &reco_pdg);
+    fRecoTree->Branch("reco_ixn_charged_track_mult", &reco_ixn_charged_track_mult);
+    fRecoTree->Branch("reco_ixn_index", &reco_ixn_index);
 
+    fRecoTree->Branch("true_energy", &true_energy);
+    fRecoTree->Branch("true_p_x", &true_p_x);
+    fRecoTree->Branch("true_p_y", &true_p_y);
+    fRecoTree->Branch("true_p_z", &true_p_z);
+    fRecoTree->Branch("true_p_mag", &true_p_mag);
+    fRecoTree->Branch("true_length", &true_length);
+    fRecoTree->Branch("true_angle", &true_angle);
+    fRecoTree->Branch("true_angle_rot", &true_angle_rot);
+    fRecoTree->Branch("true_angle_incl", &true_angle_incl);
+    fRecoTree->Branch("true_angle_x", &true_angle_x);
+    fRecoTree->Branch("true_angle_y", &true_angle_y);
+    fRecoTree->Branch("true_angle_z", &true_angle_z);
+    fRecoTree->Branch("true_track_start_x", &true_track_start_x);
+    fRecoTree->Branch("true_track_start_y", &true_track_start_y);
+    fRecoTree->Branch("true_track_start_z", &true_track_start_z);
+    fRecoTree->Branch("true_track_end_x", &true_track_end_x);
+    fRecoTree->Branch("true_track_end_y", &true_track_end_y);
+    fRecoTree->Branch("true_track_end_z", &true_track_end_z);
+    fRecoTree->Branch("true_pdg", &true_pdg);
+    fRecoTree->Branch("true_nproton", &true_nproton);
+    fRecoTree->Branch("true_nmuon", &true_nmuon);
+    fRecoTree->Branch("interaction_id", &interaction_id);
+    fRecoTree->Branch("true_ixn_charged_track_mult", &true_ixn_charged_track_mult);
+    fRecoTree->Branch("true_ixn_index", &true_ixn_index);
 
-    fcafTree->Branch("true_energy", &true_energy);
-    fcafTree->Branch("true_p_x", &true_p_x);
-    fcafTree->Branch("true_p_y", &true_p_y);
-    fcafTree->Branch("true_p_z", &true_p_z);
-    fcafTree->Branch("true_p_mag", &true_p_mag);
-    fcafTree->Branch("true_length", &true_length);
-    fcafTree->Branch("true_angle", &true_angle);
-    fcafTree->Branch("true_angle_rot", &true_angle_rot);
-    fcafTree->Branch("true_angle_incl", &true_angle_incl);
-    fcafTree->Branch("true_angle_x", &true_angle_x);
-    fcafTree->Branch("true_angle_y", &true_angle_y);
-    fcafTree->Branch("true_angle_z", &true_angle_z);
-    fcafTree->Branch("true_track_start_x", &true_track_start_x);
-    fcafTree->Branch("true_track_start_y", &true_track_start_y);
-    fcafTree->Branch("true_track_start_z", &true_track_start_z);
-    fcafTree->Branch("true_track_end_x", &true_track_end_x);
-    fcafTree->Branch("true_track_end_y", &true_track_end_y);
-    fcafTree->Branch("true_track_end_z", &true_track_end_z);
-    fcafTree->Branch("true_pdg", &true_pdg);
-    fTruthTree->Branch("true_ixn_charged_track_mult", &true_ixn_charged_track_mult)
-    fcafTree->Branch("true_nproton", &true_nproton);
-    fcafTree->Branch("true_nmuon", &true_nmuon);
-    fcafTree->Branch("spill_index", &spill_index);
-    fcafTree->Branch("file_index", &file_index);
-    fcafTree->Branch("interaction_id", &interaction_id);
-    fcafTree->Branch("event", &event);
-    fcafTree->Branch("run", &run);
-    fcafTree->Branch("subrun", &subrun);
-    fcafTree->Branch("caf_file_name", &caf_file_name);
+    fRecoTree->Branch("overlap", &overlap);
+    fRecoTree->Branch("spill_index", &spill_index);
+    fRecoTree->Branch("file_index", &file_index);
+    fRecoTree->Branch("event", &event);
+    fRecoTree->Branch("run", &run);
+    fRecoTree->Branch("subrun", &subrun);
+    fRecoTree->Branch("caf_file_name", &caf_file_name);
 
 
     //Beam direction -3.343 degrees in y
@@ -189,118 +237,134 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
             int spill_num = i;
 
-            const auto num_ixn = sr->mc.nu.size();
+            const auto num_ixn = sr->common.ixn.ndlp;
 
             // Loop over each interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
-                const auto& truth_ixn = sr->mc.nu[ixn];
+                const auto& vtx = sr->common.ixn.dlp[ixn].vtx;
 
-                // Put cuts on true interaction quantities
-                // Reject interactions not on argon
-                if(truth_ixn.targetPDG != 1000180400)
+                //Get the truth interaction(s) corresponding to this reco interaction
+                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth;
+                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap;
+
+                if(vec_overlap_ixn.empty())
                     continue;
 
-                unsigned int npi = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
-
-                bool is_contained = true;
-
-                //Cut for event: 0pi and >=2 proton
-                //if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode == 10)
-                if(truth_ixn.nproton >= 2 and npi == 0)
+                //Find the truth interaction with the largest overlap
+                double current_max = 0;
+                unsigned int max_overlap = 0;
+                for(unsigned int i = 0; i < vec_overlap_ixn.size(); i++)
                 {
-                    int nproton = truth_ixn.nproton;
-                    int nmuon = 0;
-
-                    // Loop over each particle in interaction and cut events with low energy particles
-                    // Cut phantom protons
-                    for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
+                    auto val = vec_overlap_ixn.at(i);
+                    if(val > current_max)
                     {
-                        auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
-
-                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
-                            nproton--;
-                    }   
-
-                    // Count number of muons
-                    for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
-                    {
-                        if(sr->mc.nu[ixn].prim[ipart].pdg == 13)
-                            nmuon++;
+                        current_max = val;
+                        max_overlap = i;
                     }
+                }
+                const auto truth_idx = vec_truth_ixn.at(max_overlap);
+                const auto& truth_ixn = sr->mc.nu[truth_idx];
 
-                    is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
+                auto reco_ixn_trks = 0;
+                auto true_ixn_trks = 0;
 
-                    // If # protons above 5 MeV are <2, the interaction isn't contained, or there are 0 muons, skip this event
-                    if(nproton < 2 or is_contained == false or nmuon == 0)
+                auto nproton = truth_ixn.nproton;
+                auto npion = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
+                auto nmuon = 0;
+
+                //Loop over particles in matched true interaction
+                for(unsigned long ipart = 0; ipart < sr->mc.nu[truth_idx].prim.size(); ++ipart)
+                {
+                    const auto& true_part = sr->mc.nu[truth_idx].prim[ipart];
+
+                    if(true_part.pdg == 13)
+                        nmuon++;
+
+                    ++true_ixn_trks;
+                }
+
+                //If interaction is not CC2p1mu0pi, go to next interaction
+                if(nproton < 2 or npion > 0 or nmuon < 1)
+                    continue;
+                
+                //Loop over particles in reco interaction
+                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart)
+                {
+                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
+
+                    //Get truth matches for this reco particle
+                    //Variables need to be wrapped in the Proxy object
+                    caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
+                    const auto& vec_truth_id = part.truth;
+                    const auto& vec_overlap = part.truthOverlap;
+
+                    //If the truth overlap vector is empty, then assume no truth match and skip
+                    if(vec_overlap.empty())
                         continue;
 
-                    // Loop over each particle in interaction
-                    for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
+                    //Find the truth particle with the largest overlap
+                    double current_max = 0;
+                    unsigned int max_overlap = 0;
+                    for(unsigned int i =0; i < vec_overlap.size(); i++)
                     {
-
-                        // Store current true particle for easier access
-                        const auto& true_part = sr->mc.nu[ixn].prim[ipart];
-
-                        // Make cuts for individual particles if needed
-                        // Cut phantom particles
-                        if(true_part.pdg == 0 or std::isnan(sr->mc.nu[ixn].prim[ipart].start_pos.x))
-                            continue;
-
-                        // Cut protons below 5 MeV
-                        auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
-                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
-                            continue;
-
-                        // Finally get or calculate various truth quantities
-                        auto true_pvec = TVector3(true_part.p.px, true_part.p.py, true_part.p.pz);
-                        auto true_dir = TVector3(true_part.end_pos.x, true_part.end_pos.y, true_part.end_pos.z)
-                                        - TVector3(true_part.start_pos.x, true_part.start_pos.y, true_part.start_pos.z);
-                        //auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
-                        true_dir.RotateY(-TMath::Pi()/2);
-                        //auto true_cos_rot_anode_angle = TMath::Cos(true_dir.Theta()); //calculate cosine of track rotational angle (projection on anode)
-                        //auto true_cos_incl_anode_angle = TMath::Cos(true_dir.Phi()); //calculate cosine of track inclination angle (off of anode)
-                        true_dir.RotateY(TMath::Pi()/2);
-                        auto true_length_val = true_dir.Mag();
-
-                        true_dir.RotateY(-TMath::Pi()/2);
-
-                        // POPULATE: Record information in vectors (defined above) for tracks that
-                        // have passed all cuts
-
-                        true_energy.push_back(true_part.p.E);
-                        true_p_x.push_back(true_part.p.px); 
-                        true_p_y.push_back(true_part.p.py); 
-                        true_p_z.push_back(true_part.p.pz);
-                        true_p_mag.push_back(true_pvec.Mag());
-                        true_length.push_back(true_length_val);
-                        true_dir.RotateY(TMath::Pi()/2);
-                        true_angle.push_back(true_dir.Angle(beam_dir));
-                        true_angle_x.push_back(true_dir.Angle(x_plus_dir));
-                        true_angle_y.push_back(true_dir.Angle(y_plus_dir));
-                        true_angle_z.push_back(true_dir.Angle(z_plus_dir));
-                        true_dir.RotateY(-TMath::Pi()/2);
-                        true_angle_rot.push_back(true_dir.Theta());
-                        true_angle_incl.push_back(true_dir.Phi());
-                        true_track_start_x.push_back(true_part.start_pos.x);
-                        true_track_start_y.push_back(true_part.start_pos.y);
-                        true_track_start_z.push_back(true_part.start_pos.z);
-                        true_track_end_x.push_back(true_part.end_pos.x);
-                        true_track_end_y.push_back(true_part.end_pos.y);
-                        true_track_end_z.push_back(true_part.end_pos.z);
-                        true_pdg.push_back(true_part.pdg);
-                        // true_ixn_charged_track_mult.push_back(true_ixn_trks);
-                        true_nproton.push_back(nproton);
-                        true_nmuon.push_back(nmuon);
-                        spill_index.push_back(spill_num);
-                        file_index.push_back(file_num);
-                        interaction_id.push_back(true_part.interaction_id);
-                        event.push_back(sr->meta.nd_lar.event);
-                        run.push_back(sr->meta.nd_lar.run);
-                        subrun.push_back(sr->meta.nd_lar.subrun);
-                        caf_file_name.push_back(f.c_str());
-
+                        auto val = vec_overlap.at(i);
+                        if(val > current_max)
+                        {
+                            current_max = val;
+                            max_overlap = i;
+                        }
                     }
+
+                    const auto& truth_id = vec_truth_id.at(max_overlap);
+
+                    //Get pointer to the corresponding truth particle
+                    if(truth_id.type == 1)
+                        truth_match = &(sr->mc.nu[truth_id.ixn].prim[truth_id.part]);
+                    else if(truth_id.type == 3)
+                        truth_match = &(sr->mc.nu[truth_id.ixn].sec[truth_id.part]);
+                    else
+                    {
+                        std::cout << "Invalid truth id type!" << std::endl;
+                        continue;
+                    }
+
+                    ++reco_ixn_trks;
+
+                    //Get/calculate various reco/truth quantities
+                    auto pvec = TVector3(part.p.x, part.p.y, part.p.z);
+                    auto dir = TVector3(part.end.x, part.end.y, part.end.z) - TVector3(part.start.x, part.start.y, part.start.z);
+                    auto cos_angle = TMath::Cos(dir.Angle(beam_dir)); //Calculate cos of angle wrt neutrino beam direction
+                    dir.RotateY(-TMath::Pi()/2);
+                    auto cos_rot_anode_angle = TMath::Cos(dir.Theta()); //Calculate cos of track rotational angle (projection on anode)
+                    auto cos_incl_anode_angle = TMath::Cos(dir.Phi()); //Calculate cos of track inclination angle (off of anode)
+                    dir.RotateY(TMath::Pi()/2);
+                    auto length = dir.Mag();
+
+                    auto true_pvec = TVector3(truth_match->p.px, truth_match->p.py, truth_match->p.pz);
+                    auto true_dir = TVector3(truth_match->end_pos.x, truth_match->end_pos.y, truth_match->end_pos.z) - TVector3(truth_match->start_pos.x, truth_match->start_pos.y, truth_match->start_pos.z);
+                    auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
+                    true_dir.RotateY(TMath::Pi()/2);
+                    auto true_length_val = true_dir.Mag();
+
+                    auto T_diff = truth_match->p.E - part.E;
+                    auto p_diff = true_pvec.Mag() - pvec.Mag();
+                    auto length_diff = true_length_val - length;
+                    auto cos_angle_diff = true_cos_angle - cos_angle;
+
+                    dir.RotateY(-TMath::Pi()/2);
+                    true_dir.RotateY(-Math::Pi()/2);
+
+                    //Population information in vectors for tracks that have pass all cuts
+                    reco_energy.push_back(part.E);
+                    reco_p_x.push_back(part.p.x);
+                    reco_p_y.push_back(part.p.y);
+                    reco_p_z.push_back(part.p.z);
+                    reco_p_mag.push_back(pvec.Mag());
+                    reco_length.push_back(length);
+                    dir.RotateY(TMath::Pi()/2);
+                    reco_angle.push_back(dir.Angle(beam_dir));
+                    
 
                 }
 
@@ -320,8 +384,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
 
     // POPULATE: Fill TTree and write to output ROOT file
-    fcafTree->Fill();
-    fcafTree->Write();
+    fRecoTree->Fill();
+    fRecoTree->Write();
     
     std::cout << "Filled and wrote TTree." << std::endl;
 

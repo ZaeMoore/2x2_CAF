@@ -211,21 +211,16 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     int nmuon = 0;
 
                     // Loop over each particle in interaction and cut events with low energy particles
-                    // Cut phantom protons
                     for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
                     {
                         auto pmag = (TVector3(sr->mc.nu[ixn].prim[ipart].p.px, sr->mc.nu[ixn].prim[ipart].p.py, sr->mc.nu[ixn].prim[ipart].p.pz)).Mag();
 
-                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.005)
+                        if(sr->mc.nu[ixn].prim[ipart].pdg == 2212 and pmag <= 0.05) // Cut low momentum protons < 50 MeV
                             nproton--;
-                    }   
-
-                    // Count number of muons
-                    for(unsigned long ipart = 0; ipart < sr->mc.nu[ixn].prim.size(); ++ipart)
-                    {
+                        
                         if(sr->mc.nu[ixn].prim[ipart].pdg == 13)
                             nmuon++;
-                    }
+                    }   
 
                     is_contained = contained(sr->mc.nu[ixn].vtx.x, sr->mc.nu[ixn].vtx.y, sr->mc.nu[ixn].vtx.z);
 
