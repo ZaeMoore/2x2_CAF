@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <math.h>
 #include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/StandardRecord.h"
 #include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
@@ -212,6 +213,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     auto file_num = 0;
     for(const auto& f : root_list)
     {
+        std::string current_file = f;
         std::cout << "Processing " << f << std::endl;
         file_num++;
 
@@ -237,16 +239,18 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
             int spill_num = i;
 
-            const auto num_ixn = sr->common.ixn.ndlp;
-
+            const auto num_ixn = sr->common.ixn.ndlp; // RECO BRANCH ID --------------------------
+            //const auto num_ixn = sr->common.ixn.npandora;
+            
             // Loop over each interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
-                const auto& vtx = sr->common.ixn.dlp[ixn].vtx;
+                const auto& vtx = sr->common.ixn.dlp[ixn].vtx; // RECO BRANCH ID -------------------------- 
+                //replace pandora with dlp
 
                 //Get the truth interaction(s) corresponding to this reco interaction
-                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth;
-                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap;
+                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth; // RECO BRANCH ID --------------------------
+                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap; // RECO BRANCH ID --------------------------
 
                 if(vec_overlap_ixn.empty())
                     continue;
@@ -289,9 +293,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     continue;
                 
                 //Loop over particles in reco interaction
-                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart)
+                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart) // RECO BRANCH ID --------------------------
                 {
-                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
+                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart]; // RECO BRANCH ID --------------------------
 
                     //Get truth matches for this reco particle
                     //Variables need to be wrapped in the Proxy object
@@ -353,7 +357,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     auto cos_angle_diff = true_cos_angle - cos_angle;
 
                     dir.RotateY(-TMath::Pi()/2);
-                    true_dir.RotateY(-Math::Pi()/2);
+                    true_dir.RotateY(-TMath::Pi()/2);
 
                     //Population information in vectors for tracks that have pass all cuts
                     reco_energy.push_back(part.E);
@@ -364,15 +368,65 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     reco_length.push_back(length);
                     dir.RotateY(TMath::Pi()/2);
                     reco_angle.push_back(dir.Angle(beam_dir));
-                    
+                    reco_angle_x.push_back(dir.Angle(x_plus_dir));
+                    reco_angle_y.push_back(dir.Angle(y_plus_dir));
+                    reco_angle_z.push_back(dir.Angle(z_plus_dir));
+                    dir.RotateY(-TMath::Pi()/2);
+                    reco_angle_rot.push_back(dir.Theta());
+                    reco_angle_incl.push_back(dir.Phi());
+                    reco_track_start_x.push_back(part.start.x);
+                    reco_track_start_y.push_back(part.start.y);
+                    reco_track_start_z.push_back(part.start.z);
+                    reco_track_end_x.push_back(part.end.x);
+                    reco_track_end_y.push_back(part.end.y);
+                    reco_track_end_z.push_back(part.end.z);
+                    reco_pdg.push_back(part.pdg);
+                    true_energy.push_back(truth_match->p.E);
+                    true_p_x.push_back(truth_match->p.px); 
+                    true_p_y.push_back(truth_match->p.py); 
+                    true_p_z.push_back(truth_match->p.pz);
+                    true_p_mag.push_back(true_pvec.Mag());
+                    true_length.push_back(true_length_val);
+                    true_dir.RotateY(TMath::Pi()/2);
+                    true_angle.push_back(true_dir.Angle(beam_dir));
+                    true_angle_x.push_back(true_dir.Angle(x_plus_dir));
+                    true_angle_y.push_back(true_dir.Angle(y_plus_dir));
+                    true_angle_z.push_back(true_dir.Angle(z_plus_dir));
+                    true_dir.RotateY(-TMath::Pi()/2);
+                    true_angle_rot.push_back(true_dir.Theta());
+                    true_angle_incl.push_back(true_dir.Phi());
+                    true_track_start_x.push_back(truth_match->start_pos.x);
+                    true_track_start_y.push_back(truth_match->start_pos.y);
+                    true_track_start_z.push_back(truth_match->start_pos.z);
+                    true_track_end_x.push_back(truth_match->end_pos.x);
+                    true_track_end_y.push_back(truth_match->end_pos.y);
+                    true_track_end_z.push_back(truth_match->end_pos.z);
+                    true_pdg.push_back(truth_match->pdg);
+                    true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
+                    true_ixn_charged_track_mult.push_back(true_ixn_trks);
+                    overlap.push_back(current_max);
+                    true_ixn_index.push_back(truth_idx);
+                    reco_ixn_index.push_back(ixn);
+                    spill_index.push_back(spill_num);
+                    file_index.push_back(file_num);
+                    event.push_back(sr->meta.nd_lar.event);
+                    run.push_back(sr->meta.nd_lar.run);
+                    subrun.push_back(sr->meta.nd_lar.subrun);
+                    caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
 
+                } //End of particle loop
+
+                //Loop over particles in the interaction again to load charged track multiplicity
+                for(unsigned long ipart = 0; ipart < reco_ixn_trks; ++ipart)
+                {
+                    reco_ixn_charged_track_mult.push_back(reco_ixn_trks);
                 }
 
-            }
+            } //End of interaction loop
 
-        }
+        } //End of spill loop
         caf_file->Close();
-    }
+    } //End of file loop
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
