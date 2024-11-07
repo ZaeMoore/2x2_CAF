@@ -240,17 +240,15 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             int spill_num = i;
 
             const auto num_ixn = sr->common.ixn.ndlp; // RECO BRANCH ID --------------------------
-            //const auto num_ixn = sr->common.ixn.npandora;
             
             // Loop over each interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
                 const auto& vtx = sr->common.ixn.dlp[ixn].vtx; // RECO BRANCH ID -------------------------- 
-                //replace pandora with dlp
 
                 //Get the truth interaction(s) corresponding to this reco interaction
-                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth; // RECO BRANCH ID --------------------------
-                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap; // RECO BRANCH ID --------------------------
+                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth; // RECO BRANCH ID -------------------------- 
+                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap; // RECO BRANCH ID -------------------------- 
 
                 if(vec_overlap_ixn.empty())
                     continue;
@@ -289,137 +287,141 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 }
 
                 //If interaction is not CC2p1mu0pi, go to next interaction
-                if(nproton < 2 or npion > 0 or nmuon < 1)
-                    continue;
+                //if(nproton < 2 or npion > 0 or nmuon < 1)
+                //    continue;
                 
-                //Loop over particles in reco interaction
-                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart) // RECO BRANCH ID --------------------------
+                if(nproton >= 2 and npion == 0 and nmuon >= 1)
                 {
-                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart]; // RECO BRANCH ID --------------------------
-
-                    //Get truth matches for this reco particle
-                    //Variables need to be wrapped in the Proxy object
-                    caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
-                    const auto& vec_truth_id = part.truth;
-                    const auto& vec_overlap = part.truthOverlap;
-
-                    //If the truth overlap vector is empty, then assume no truth match and skip
-                    if(vec_overlap.empty())
-                        continue;
-
-                    //Find the truth particle with the largest overlap
-                    double current_max = 0;
-                    unsigned int max_overlap = 0;
-                    for(unsigned int i =0; i < vec_overlap.size(); i++)
+                    //Loop over particles in reco interaction
+                    for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart) // RECO BRANCH ID --------------------------
                     {
-                        auto val = vec_overlap.at(i);
-                        if(val > current_max)
+                        const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart]; // RECO BRANCH ID --------------------------
+
+                        //Get truth matches for this reco particle
+                        //Variables need to be wrapped in the Proxy object
+                        caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
+                        const auto& vec_truth_id = part.truth;
+                        const auto& vec_overlap = part.truthOverlap;
+
+                        //If the truth overlap vector is empty, then assume no truth match and skip
+                        if(vec_overlap.empty())
+                            continue;
+
+                        //Find the truth particle with the largest overlap
+                        double current_max = 0;
+                        unsigned int max_overlap = 0;
+                        for(unsigned int i =0; i < vec_overlap.size(); i++)
                         {
-                            current_max = val;
-                            max_overlap = i;
+                            auto val = vec_overlap.at(i);
+                            if(val > current_max)
+                            {
+                                current_max = val;
+                                max_overlap = i;
+                            }
                         }
-                    }
 
-                    const auto& truth_id = vec_truth_id.at(max_overlap);
+                        const auto& truth_id = vec_truth_id.at(max_overlap);
 
-                    //Get pointer to the corresponding truth particle
-                    if(truth_id.type == 1)
-                        truth_match = &(sr->mc.nu[truth_id.ixn].prim[truth_id.part]);
-                    else if(truth_id.type == 3)
-                        truth_match = &(sr->mc.nu[truth_id.ixn].sec[truth_id.part]);
-                    else
+                        //Get pointer to the corresponding truth particle
+                        if(truth_id.type == 1)
+                            truth_match = &(sr->mc.nu[truth_id.ixn].prim[truth_id.part]);
+                        else if(truth_id.type == 3)
+                            truth_match = &(sr->mc.nu[truth_id.ixn].sec[truth_id.part]);
+                        else
+                        {
+                            std::cout << "Invalid truth id type!" << std::endl;
+                            continue;
+                        }
+
+                        ++reco_ixn_trks;
+
+                        //Get/calculate various reco/truth quantities
+                        auto pvec = TVector3(part.p.x, part.p.y, part.p.z);
+                        auto dir = TVector3(part.end.x, part.end.y, part.end.z) - TVector3(part.start.x, part.start.y, part.start.z);
+                        auto cos_angle = TMath::Cos(dir.Angle(beam_dir)); //Calculate cos of angle wrt neutrino beam direction
+                        dir.RotateY(-TMath::Pi()/2);
+                        auto cos_rot_anode_angle = TMath::Cos(dir.Theta()); //Calculate cos of track rotational angle (projection on anode)
+                        auto cos_incl_anode_angle = TMath::Cos(dir.Phi()); //Calculate cos of track inclination angle (off of anode)
+                        dir.RotateY(TMath::Pi()/2);
+                        auto length = dir.Mag();
+
+                        auto true_pvec = TVector3(truth_match->p.px, truth_match->p.py, truth_match->p.pz);
+                        auto true_dir = TVector3(truth_match->end_pos.x, truth_match->end_pos.y, truth_match->end_pos.z) - TVector3(truth_match->start_pos.x, truth_match->start_pos.y, truth_match->start_pos.z);
+                        auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
+                        true_dir.RotateY(TMath::Pi()/2);
+                        auto true_length_val = true_dir.Mag();
+
+                        auto T_diff = truth_match->p.E - part.E;
+                        auto p_diff = true_pvec.Mag() - pvec.Mag();
+                        auto length_diff = true_length_val - length;
+                        auto cos_angle_diff = true_cos_angle - cos_angle;
+
+                        dir.RotateY(-TMath::Pi()/2);
+                        true_dir.RotateY(-TMath::Pi()/2);
+
+                        //Population information in vectors for tracks that have pass all cuts
+                        reco_energy.push_back(part.E);
+                        reco_p_x.push_back(part.p.x);
+                        reco_p_y.push_back(part.p.y);
+                        reco_p_z.push_back(part.p.z);
+                        reco_p_mag.push_back(pvec.Mag());
+                        reco_length.push_back(length);
+                        dir.RotateY(TMath::Pi()/2);
+                        reco_angle.push_back(dir.Angle(beam_dir));
+                        reco_angle_x.push_back(dir.Angle(x_plus_dir));
+                        reco_angle_y.push_back(dir.Angle(y_plus_dir));
+                        reco_angle_z.push_back(dir.Angle(z_plus_dir));
+                        dir.RotateY(-TMath::Pi()/2);
+                        reco_angle_rot.push_back(dir.Theta());
+                        reco_angle_incl.push_back(dir.Phi());
+                        reco_track_start_x.push_back(part.start.x);
+                        reco_track_start_y.push_back(part.start.y);
+                        reco_track_start_z.push_back(part.start.z);
+                        reco_track_end_x.push_back(part.end.x);
+                        reco_track_end_y.push_back(part.end.y);
+                        reco_track_end_z.push_back(part.end.z);
+                        reco_pdg.push_back(part.pdg);
+                        true_energy.push_back(truth_match->p.E);
+                        true_p_x.push_back(truth_match->p.px); 
+                        true_p_y.push_back(truth_match->p.py); 
+                        true_p_z.push_back(truth_match->p.pz);
+                        true_p_mag.push_back(true_pvec.Mag());
+                        true_length.push_back(true_length_val);
+                        true_dir.RotateY(TMath::Pi()/2);
+                        true_angle.push_back(true_dir.Angle(beam_dir));
+                        true_angle_x.push_back(true_dir.Angle(x_plus_dir));
+                        true_angle_y.push_back(true_dir.Angle(y_plus_dir));
+                        true_angle_z.push_back(true_dir.Angle(z_plus_dir));
+                        true_dir.RotateY(-TMath::Pi()/2);
+                        true_angle_rot.push_back(true_dir.Theta());
+                        true_angle_incl.push_back(true_dir.Phi());
+                        true_track_start_x.push_back(truth_match->start_pos.x);
+                        true_track_start_y.push_back(truth_match->start_pos.y);
+                        true_track_start_z.push_back(truth_match->start_pos.z);
+                        true_track_end_x.push_back(truth_match->end_pos.x);
+                        true_track_end_y.push_back(truth_match->end_pos.y);
+                        true_track_end_z.push_back(truth_match->end_pos.z);
+                        true_pdg.push_back(truth_match->pdg);
+                        true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
+                        true_ixn_charged_track_mult.push_back(true_ixn_trks);
+                        overlap.push_back(current_max);
+                        true_ixn_index.push_back(truth_idx);
+                        reco_ixn_index.push_back(ixn);
+                        spill_index.push_back(spill_num);
+                        file_index.push_back(file_num);
+                        event.push_back(sr->meta.nd_lar.event);
+                        run.push_back(sr->meta.nd_lar.run);
+                        subrun.push_back(sr->meta.nd_lar.subrun);
+                        caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
+
+                    } //End of particle loop
+
+                    //Loop over particles in the interaction again to load charged track multiplicity
+                    for(unsigned long ipart = 0; ipart < reco_ixn_trks; ++ipart)
                     {
-                        std::cout << "Invalid truth id type!" << std::endl;
-                        continue;
+                        reco_ixn_charged_track_mult.push_back(reco_ixn_trks);
                     }
 
-                    ++reco_ixn_trks;
-
-                    //Get/calculate various reco/truth quantities
-                    auto pvec = TVector3(part.p.x, part.p.y, part.p.z);
-                    auto dir = TVector3(part.end.x, part.end.y, part.end.z) - TVector3(part.start.x, part.start.y, part.start.z);
-                    auto cos_angle = TMath::Cos(dir.Angle(beam_dir)); //Calculate cos of angle wrt neutrino beam direction
-                    dir.RotateY(-TMath::Pi()/2);
-                    auto cos_rot_anode_angle = TMath::Cos(dir.Theta()); //Calculate cos of track rotational angle (projection on anode)
-                    auto cos_incl_anode_angle = TMath::Cos(dir.Phi()); //Calculate cos of track inclination angle (off of anode)
-                    dir.RotateY(TMath::Pi()/2);
-                    auto length = dir.Mag();
-
-                    auto true_pvec = TVector3(truth_match->p.px, truth_match->p.py, truth_match->p.pz);
-                    auto true_dir = TVector3(truth_match->end_pos.x, truth_match->end_pos.y, truth_match->end_pos.z) - TVector3(truth_match->start_pos.x, truth_match->start_pos.y, truth_match->start_pos.z);
-                    auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
-                    true_dir.RotateY(TMath::Pi()/2);
-                    auto true_length_val = true_dir.Mag();
-
-                    auto T_diff = truth_match->p.E - part.E;
-                    auto p_diff = true_pvec.Mag() - pvec.Mag();
-                    auto length_diff = true_length_val - length;
-                    auto cos_angle_diff = true_cos_angle - cos_angle;
-
-                    dir.RotateY(-TMath::Pi()/2);
-                    true_dir.RotateY(-TMath::Pi()/2);
-
-                    //Population information in vectors for tracks that have pass all cuts
-                    reco_energy.push_back(part.E);
-                    reco_p_x.push_back(part.p.x);
-                    reco_p_y.push_back(part.p.y);
-                    reco_p_z.push_back(part.p.z);
-                    reco_p_mag.push_back(pvec.Mag());
-                    reco_length.push_back(length);
-                    dir.RotateY(TMath::Pi()/2);
-                    reco_angle.push_back(dir.Angle(beam_dir));
-                    reco_angle_x.push_back(dir.Angle(x_plus_dir));
-                    reco_angle_y.push_back(dir.Angle(y_plus_dir));
-                    reco_angle_z.push_back(dir.Angle(z_plus_dir));
-                    dir.RotateY(-TMath::Pi()/2);
-                    reco_angle_rot.push_back(dir.Theta());
-                    reco_angle_incl.push_back(dir.Phi());
-                    reco_track_start_x.push_back(part.start.x);
-                    reco_track_start_y.push_back(part.start.y);
-                    reco_track_start_z.push_back(part.start.z);
-                    reco_track_end_x.push_back(part.end.x);
-                    reco_track_end_y.push_back(part.end.y);
-                    reco_track_end_z.push_back(part.end.z);
-                    reco_pdg.push_back(part.pdg);
-                    true_energy.push_back(truth_match->p.E);
-                    true_p_x.push_back(truth_match->p.px); 
-                    true_p_y.push_back(truth_match->p.py); 
-                    true_p_z.push_back(truth_match->p.pz);
-                    true_p_mag.push_back(true_pvec.Mag());
-                    true_length.push_back(true_length_val);
-                    true_dir.RotateY(TMath::Pi()/2);
-                    true_angle.push_back(true_dir.Angle(beam_dir));
-                    true_angle_x.push_back(true_dir.Angle(x_plus_dir));
-                    true_angle_y.push_back(true_dir.Angle(y_plus_dir));
-                    true_angle_z.push_back(true_dir.Angle(z_plus_dir));
-                    true_dir.RotateY(-TMath::Pi()/2);
-                    true_angle_rot.push_back(true_dir.Theta());
-                    true_angle_incl.push_back(true_dir.Phi());
-                    true_track_start_x.push_back(truth_match->start_pos.x);
-                    true_track_start_y.push_back(truth_match->start_pos.y);
-                    true_track_start_z.push_back(truth_match->start_pos.z);
-                    true_track_end_x.push_back(truth_match->end_pos.x);
-                    true_track_end_y.push_back(truth_match->end_pos.y);
-                    true_track_end_z.push_back(truth_match->end_pos.z);
-                    true_pdg.push_back(truth_match->pdg);
-                    true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
-                    true_ixn_charged_track_mult.push_back(true_ixn_trks);
-                    overlap.push_back(current_max);
-                    true_ixn_index.push_back(truth_idx);
-                    reco_ixn_index.push_back(ixn);
-                    spill_index.push_back(spill_num);
-                    file_index.push_back(file_num);
-                    event.push_back(sr->meta.nd_lar.event);
-                    run.push_back(sr->meta.nd_lar.run);
-                    subrun.push_back(sr->meta.nd_lar.subrun);
-                    caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
-
-                } //End of particle loop
-
-                //Loop over particles in the interaction again to load charged track multiplicity
-                for(unsigned long ipart = 0; ipart < reco_ixn_trks; ++ipart)
-                {
-                    reco_ixn_charged_track_mult.push_back(reco_ixn_trks);
                 }
 
             } //End of interaction loop
