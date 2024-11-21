@@ -228,7 +228,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
             const auto num_ixn = sr->common.ixn.ndlp;
 
-            // Loop over each interaction
+            // Loop over each reco interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
                 const auto& vtx = sr->common.ixn.dlp[ixn].vtx;
