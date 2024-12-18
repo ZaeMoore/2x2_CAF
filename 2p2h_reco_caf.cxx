@@ -91,8 +91,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_track_end_y;
     std::vector< double >  reco_track_end_z;
     std::vector< int >     reco_pdg;
-    std::vector< int >     reco_nproton;
-    std::vector< int >     reco_ixn_charged_track_mult;
 
     std::vector< double >  true_energy;
     std::vector< double >  true_p_x; 
@@ -116,7 +114,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< int >     true_nproton;
     std::vector< int >     true_nmuon;
     std::vector< int >     interaction_id;
-    std::vector< int >     true_ixn_charged_track_mult;
 
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
@@ -150,8 +147,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fRecoTree->Branch("reco_track_end_y", &reco_track_end_y);
     fRecoTree->Branch("reco_track_end_z", &reco_track_end_z);
     fRecoTree->Branch("reco_pdg", &reco_pdg);
-    fRecoTree->Branch("reco_nproton", &reco_nproton);
-    fRecoTree->Branch("reco_ixn_charged_track_mult", &reco_ixn_charged_track_mult);
     fRecoTree->Branch("reco_ixn_index", &reco_ixn_index);
 
     fRecoTree->Branch("true_energy", &true_energy);
@@ -176,7 +171,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fRecoTree->Branch("true_nproton", &true_nproton);
     fRecoTree->Branch("true_nmuon", &true_nmuon);
     fRecoTree->Branch("interaction_id", &interaction_id);
-    fRecoTree->Branch("true_ixn_charged_track_mult", &true_ixn_charged_track_mult);
     fRecoTree->Branch("true_ixn_index", &true_ixn_index);
 
     fRecoTree->Branch("overlap", &overlap);
@@ -217,7 +211,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
         //Loop over each spill
         const unsigned long nspills = caf_tree->GetEntries();
         const unsigned int incr = nspills / 10;
-        std::cout << "Looping over " << nspills << "entries/spills..." << std::endl;
+        std::cout << "Looping over " << nspills << " entries/spills..." << std::endl;
         for (unsigned long i = 0; i < nspills; ++i)
         {
             caf_tree->GetEntry(i);
@@ -254,34 +248,39 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         max_overlap = i;
                     }
                 }
+
+                // Matched truth interaction
                 const auto truth_idx = vec_truth_ixn.at(max_overlap);
                 const auto& truth_ixn = sr->mc.nu[truth_idx];
 
-                auto reco_ixn_trks = 0;
-                auto true_ixn_trks = 0;
+                // Require vertex to be within 
+                bool is_contained = true;
+                is_contained = contained(truth_ixn.vtx.x, truth_ixn.vtx.y, truth_ixn.vtx.z);
 
-                auto truth_nproton = truth_ixn.nproton;
+                if(is_contained == false)
+                    continue;
+
+                // Don't trust nproton branch 
+                auto truth_nproton = 0;
                 auto truth_npion = truth_ixn.npi0 + truth_ixn.npim + truth_ixn.npip;
                 auto truth_nmuon = 0;
 
-                auto reco_numproton = 0;
-                auto reco_nummuon = 0;
-
-                // Loop over reco particles interaction
-                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart)
+                // Loop over true particles and count number of muons and protons
+                for(unsigned long ipart = 0; ipart < truth_ixn.prim.size(); ++ipart)
                 {
-                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
+                    const auto& part = truth_ixn.prim[ipart];
 
-                    if(part.pdg == 2212)
-                        reco_numproton++;
+                    auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
+
+                    if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
+                        truth_nproton++;
 
                     if(part.pdg == 13)
-                        reco_nummuon++;
-
+                        truth_nmuon++;
                 }
 
-                // If interaction is not CC2p1mu0pi, go to next interaction
-                if(reco_numproton < 2 or reco_nummuon < 1)
+                // If interaction is not CC2p1mu0pi, go to next interaction             
+                if(truth_nproton != 2 || truth_nmuon < 1)
                     continue;
 
                 // Loop over particles in reco interaction
@@ -289,7 +288,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 {
                     const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
 
-                    // Get truth matches for reco particle
+                    // Get truth particle matches for reco particle
                     caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
                     const auto& vec_truth_id = part.truth;
                     const auto& vec_overlap = part.truthOverlap;
@@ -324,8 +323,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         std::cout << "Invalid truth id type!" << std::endl;
                         continue;
                     }
-
-                    ++reco_ixn_trks;
 
                     // Get/calculate various reco/truth quantities
                     auto pvec = TVector3(part.p.x, part.p.y, part.p.z);
@@ -373,7 +370,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     reco_track_end_y.push_back(part.end.y);
                     reco_track_end_z.push_back(part.end.z);
                     reco_pdg.push_back(part.pdg);
-                    reco_nproton.push_back(reco_numproton);
                     true_energy.push_back(truth_match->p.E);
                     true_p_x.push_back(truth_match->p.px); 
                     true_p_y.push_back(truth_match->p.py); 
@@ -396,7 +392,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     true_track_end_z.push_back(truth_match->end_pos.z);
                     true_pdg.push_back(truth_match->pdg);
                     true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
-                    true_ixn_charged_track_mult.push_back(true_ixn_trks);
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
                     reco_ixn_index.push_back(ixn);
@@ -408,12 +403,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
 
                 } // End of particle loop
-
-                //Loop over particles in the interaction again to load charged track multiplicity
-                for(unsigned long ipart = 0; ipart < reco_ixn_trks; ++ipart)
-                {
-                    reco_ixn_charged_track_mult.push_back(reco_ixn_trks);
-                }
 
             } // End of interaction loop
         
