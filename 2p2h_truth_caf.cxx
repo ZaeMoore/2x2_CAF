@@ -205,7 +205,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                 //Cut for event: 0pi and >=2 proton
                 //if(truth_ixn.nproton >= 2 and npi == 0 and truth_ixn.mode == 10) 
-                if(truth_ixn.nproton >= 2 and npi == 0)
+                if(truth_ixn.nproton == 2 and npi == 0)
                 {
                     int nproton = truth_ixn.nproton;
                     int nmuon = 0;
@@ -307,7 +307,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_truth_minirun6";
+    std::string file_name = "2p2h_truth_output_n2";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
