@@ -257,7 +257,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 bool is_contained = true;
                 is_contained = contained(truth_ixn.vtx.x, truth_ixn.vtx.y, truth_ixn.vtx.z);
 
-                if(is_contained == false || truth_ixn.id > 1E9 || truth_ixn.targetPDG != 1000180400)
+                // truth_ixn.ix > 1E9
+                if(is_contained == false || truth_ixn.targetPDG != 1000180400)
                     continue;
 
 
@@ -419,7 +420,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_reco_output_1.2";
+    std::string file_name = "2p2h_reco_output_1.3";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");

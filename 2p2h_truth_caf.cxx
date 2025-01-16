@@ -295,13 +295,13 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     }
 
-                }
+                } 
 
-            }
+            } // End of interaction loop
 
-        }
+        } // End of spill loop
         caf_file->Close();
-    }
+    } // End of file loop
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
