@@ -286,7 +286,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 }
 
                 // If interaction is not CC2p1mu0pi, go to next interaction             
-                if(truth_nproton != 2 || truth_nmuon < 1)
+                if(truth_nproton != 2 || truth_nmuon < 1 || truth_npion > 1)
                     continue;
 
                 // Loop over particles in reco interaction
@@ -420,7 +420,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_reco_output_1.3";
+    std::string file_name = "2p2h_reco_output_1.4";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
