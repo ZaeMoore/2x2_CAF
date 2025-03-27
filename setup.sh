@@ -1,6 +1,4 @@
 source /cvmfs/dune.opensciencegrid.org/products/dune/setup_dune.sh
-
-#Taken from ND_CAFMaker, some of these might not be necessary
 setup cmake v3_22_2
 setup gcc v9_3_0
 setup pycurl

@@ -188,7 +188,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             { // Beginning of interaction loop
                 const auto& reco_ixn = sr->common.ixn.dlp[ixn];
 
-                // Require vertex to be within volume
+                // Require vertex to be within volume -------------------------------------------
                 bool is_contained = contained(reco_ixn.vtx.x, reco_ixn.vtx.y, reco_ixn.vtx.z);
                 if(is_contained == false)
                     continue;
@@ -266,7 +266,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 } // End of muon start pos loop
 
 
-                if(nproton < 2 || nmuon < 1 || npion > 1 || vtx_2pmu == false)
+                if(nproton < 2 || nmuon < 1 || npion > 0 || vtx_2pmu == false)
                     continue;
 
                 // Loop over particles in interaction and save information
@@ -324,7 +324,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2x2_2p2h_output_pandora_1.2";
+    std::string file_name = "2x2_2p2h_output_1.3";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
