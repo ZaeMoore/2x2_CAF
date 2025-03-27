@@ -12,8 +12,8 @@
 #include <vector>
 #include <cmath>
 #include <math.h>
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/StandardRecord.h"
+#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
 
 float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) {
@@ -91,16 +91,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_track_end_y;
     std::vector< double >  reco_track_end_z;
     std::vector< int >     reco_pdg;
+
+    std::vector< double >  overlap;
     std::vector< double >  reco_ixn_index;
-
-    std::vector< double >  reco_pandora_energy;
-    std::vector< double >  reco_pandora_p_x;
-    std::vector< double >  reco_pandora_p_y;
-    std::vector< double >  reco_pandora_p_z;
-    std::vector< double >  reco_pandora_p_mag;
-    std::vector< double >  reco_pandora_length;
-    std::vector< double >  reco_pandora_angle;
-
     std::vector< int >     spill_index;
     std::vector< int >     file_index;
     std::vector< int >     event;
@@ -110,7 +103,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
 
     // DEFINE: TTree and TBranches to go in output ROOT file
-    TTree *fCafTree=new TTree("CafTree", "CAF Variables");
+    TTree *fCafTree=new TTree("CafTree", "Caf reco and truth variables");
     fCafTree->Branch("reco_energy", &reco_energy);
     fCafTree->Branch("reco_p_x", &reco_p_x);
     fCafTree->Branch("reco_p_y", &reco_p_y);
@@ -132,6 +125,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("reco_pdg", &reco_pdg);
     fCafTree->Branch("reco_ixn_index", &reco_ixn_index);
 
+    fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
     fCafTree->Branch("file_index", &file_index);
     fCafTree->Branch("event", &event);
@@ -140,38 +134,38 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("caf_file_name", &caf_file_name);
 
 
-    // Beam direction -3.343 degrees in y
+    //Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
 
-    // z-direction (roughly beam dir)
+    //z-direction (roughly beam dir)
     const auto z_plus_dir = TVector3(0, 0, 1.0);
-    const auto y_plus_dir = TVector3(0, 1.0, 0);
-    const auto x_plus_dir = TVector3(1.0, 0, 0);
+    const auto y_plus_dir = TVector3(0, 1.0, 0.0);
+    const auto x_plus_dir = TVector3(1.0, 0, 0.0);
 
-    // negative y-direction
-    const auto y_minus_dir = TVector3(0, -1.0, 0);
+    //negative y-direction 
+    const auto y_minus_dir = TVector3(0, -1.0, 0.0);
 
-    // Loop through files in list
+    //Loop through files in list
     const auto t_start{std::chrono::steady_clock::now()};
     auto file_num = 0;
     for(const auto& f : root_list)
-    { // Beginning of file loop
+    {
         std::string current_file = f;
         std::cout << "Processing " << f << std::endl;
         file_num++;
 
-        // Open file and attach SRProxy Object
+        //Open file and attach SRProxy Object
         TFile* caf_file = TFile::Open(f.c_str(), "READ");
         TTree* caf_tree = (TTree*)caf_file->Get("cafTree");
         std::string tree_name = is_flat ? "rec" : "";
         auto sr = new caf::SRProxy(caf_tree, tree_name);
 
-        // Loop over each spill
+        //Loop over each spill
         const unsigned long nspills = caf_tree->GetEntries();
         const unsigned int incr = nspills / 10;
         std::cout << "Looping over " << nspills << " entries/spills..." << std::endl;
         for (unsigned long i = 0; i < nspills; ++i)
-        { // Beginning of spill loop
+        {
             caf_tree->GetEntry(i);
 
             // Keep track of spill # with print statement
@@ -180,15 +174,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
             int spill_num = i;
 
-            const auto num_ixn = sr->common.ixn.ndlp; // spine
-            //const auto num_ixn = sr->common.ixn.npandora; // pandora
+            const auto num_ixn = sr->common.ixn.ndlp;
 
             // Loop over each reco interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             { // Beginning of interaction loop
                 const auto& reco_ixn = sr->common.ixn.dlp[ixn];
 
-                // Require vertex to be within volume -------------------------------------------
+                // Require vertex to be within volume
                 bool is_contained = contained(reco_ixn.vtx.x, reco_ixn.vtx.y, reco_ixn.vtx.z);
                 if(is_contained == false)
                     continue;
@@ -256,8 +249,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         TVector3 diff = mu_start - p_start;
                         auto magnitude = diff.Mag();
 
-                        // if distance less than 3cm, ++vtx_match
-                        if(magnitude < 3)
+                        // if distance less than something, ++vtx_match
+                        if(magnitude < 5)
                             vtx_match++;
                     } // End of proton start pos loop
                     
@@ -266,7 +259,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 } // End of muon start pos loop
 
 
-                if(nproton < 2 || nmuon < 1 || npion > 0 || vtx_2pmu == false)
+                if(nproton < 2 || nmuon < 1 || npion > 1 || vtx_2pmu == false)
                     continue;
 
                 // Loop over particles in interaction and save information
@@ -324,7 +317,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2x2_2p2h_output_1.3";
+    std::string file_name = "2p2h_eff_output";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
