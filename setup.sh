@@ -24,6 +24,7 @@ export PATH=$PATH:$GEANT4_FQ_DIR/bin
 
 # shut up ROOT include errors
 export ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH:$GENIE_INC/GENIE
+#export ROOT_INCLUDE_PATH=$SRPROXY_INC:$ROOT_INCLUDE_PATH #SRProxy fix
 
 # nusystematics paths
 #export NUSYST=${PWD}/nusystematics

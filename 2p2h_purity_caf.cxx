@@ -12,8 +12,8 @@
 #include <vector>
 #include <cmath>
 #include <math.h>
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/StandardRecord.h"
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_01_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
+#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
 
 float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) {
@@ -227,11 +227,12 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             // Loop over each reco interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
-                const auto& vtx = sr->common.ixn.dlp[ixn].vtx;
+                const auto& reco_ixn = sr->common.ixn.dlp[ixn];
+                const auto& vtx = reco_ixn.vtx;
 
                 // Get the truth interaction(s) corresponding to this reco interaction
-                const auto& vec_truth_ixn = sr->common.ixn.dlp[ixn].truth;
-                const auto& vec_overlap_ixn = sr->common.ixn.dlp[ixn].truthOverlap;
+                const auto& vec_truth_ixn = reco_ixn.truth;
+                const auto& vec_overlap_ixn = reco_ixn.truthOverlap;
 
                 if(vec_overlap_ixn.empty())
                     continue;
@@ -253,40 +254,36 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 const auto truth_idx = vec_truth_ixn.at(max_overlap);
                 const auto& truth_ixn = sr->mc.nu[truth_idx];
 
-                // Require vertex to be within 
+                // Require reco vertex to be within 
                 bool is_contained = true;
-                is_contained = contained(truth_ixn.vtx.x, truth_ixn.vtx.y, truth_ixn.vtx.z);
+                is_contained = contained(vtx.x, vtx.y, vtx.z);
 
                 // truth_ixn.ix > 1E9
                 if(is_contained == false || truth_ixn.targetPDG != 1000180400)
                     continue;
 
-
-                // Count number of relevant particles
-                // Don't trust nproton branch 
-                auto truth_nproton = 0;
-                auto truth_npion = 0;
-                auto truth_nmuon = 0;
-
-                // Loop over true particles and count number of muons and protons
-                for(unsigned long ipart = 0; ipart < truth_ixn.prim.size(); ++ipart)
+                // Count number of relevant (reco) particles
+                auto reco_nproton = 0;
+                auto reco_npion = 0;
+                auto reco_nmuon = 0;
+                for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart)
                 {
-                    const auto& part = truth_ixn.prim[ipart];
+                    const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
+                    
+                    auto pmag = (TVector3(part.p.x, part.p.y, part.p.z)).Mag();
 
-                    auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
-
-                    if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
-                        truth_nproton++;
+                    if(part.pdg == 2212) // Cut low momentum protons under 10? MeV
+                        reco_nproton++;
 
                     if(part.pdg == 13)
-                        truth_nmuon++;
+                        reco_nmuon++;
 
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
-                        truth_npion++;
+                        reco_npion++;
                 }
 
                 // If interaction is not CC2p1mu0pi, go to next interaction             
-                if(truth_nproton != 2 || truth_nmuon != 1 || truth_npion > 0)
+                if(reco_nproton != 2 || reco_nmuon != 1 || reco_npion > 0)
                     continue;
 
                 // Loop over particles in reco interaction
@@ -420,7 +417,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_efficiency_output";
+    std::string file_name = "2p2h_purity_output_1.1";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
