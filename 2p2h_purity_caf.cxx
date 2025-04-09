@@ -127,59 +127,59 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
 
     // DEFINE: TTree and TBranches to go in output ROOT file
-    TTree *fRecoTree=new TTree("RecoTree", "Caf reco and truth variables");
-    fRecoTree->Branch("reco_energy", &reco_energy);
-    fRecoTree->Branch("reco_p_x", &reco_p_x);
-    fRecoTree->Branch("reco_p_y", &reco_p_y);
-    fRecoTree->Branch("reco_p_z", &reco_p_z);
-    fRecoTree->Branch("reco_p_mag", &reco_p_mag);
-    fRecoTree->Branch("reco_length", &reco_length);
-    fRecoTree->Branch("reco_angle", &reco_angle);
-    fRecoTree->Branch("reco_angle_rot", &reco_angle_rot);
-    fRecoTree->Branch("reco_angle_incl", &reco_angle_incl);
-    fRecoTree->Branch("reco_angle_x", &reco_angle_x);
-    fRecoTree->Branch("reco_angle_y", &reco_angle_y);
-    fRecoTree->Branch("reco_angle_z", &reco_angle_z);
-    fRecoTree->Branch("reco_track_start_x", &reco_track_start_x);
-    fRecoTree->Branch("reco_track_start_y", &reco_track_start_y);
-    fRecoTree->Branch("reco_track_start_z", &reco_track_start_z);
-    fRecoTree->Branch("reco_track_end_x", &reco_track_end_x);
-    fRecoTree->Branch("reco_track_end_y", &reco_track_end_y);
-    fRecoTree->Branch("reco_track_end_z", &reco_track_end_z);
-    fRecoTree->Branch("reco_pdg", &reco_pdg);
-    fRecoTree->Branch("reco_ixn_index", &reco_ixn_index);
+    TTree *fCafTree=new TTree("CafTree", "Caf reco and truth variables");
+    fCafTree->Branch("reco_energy", &reco_energy);
+    fCafTree->Branch("reco_p_x", &reco_p_x);
+    fCafTree->Branch("reco_p_y", &reco_p_y);
+    fCafTree->Branch("reco_p_z", &reco_p_z);
+    fCafTree->Branch("reco_p_mag", &reco_p_mag);
+    fCafTree->Branch("reco_length", &reco_length);
+    fCafTree->Branch("reco_angle", &reco_angle);
+    fCafTree->Branch("reco_angle_rot", &reco_angle_rot);
+    fCafTree->Branch("reco_angle_incl", &reco_angle_incl);
+    fCafTree->Branch("reco_angle_x", &reco_angle_x);
+    fCafTree->Branch("reco_angle_y", &reco_angle_y);
+    fCafTree->Branch("reco_angle_z", &reco_angle_z);
+    fCafTree->Branch("reco_track_start_x", &reco_track_start_x);
+    fCafTree->Branch("reco_track_start_y", &reco_track_start_y);
+    fCafTree->Branch("reco_track_start_z", &reco_track_start_z);
+    fCafTree->Branch("reco_track_end_x", &reco_track_end_x);
+    fCafTree->Branch("reco_track_end_y", &reco_track_end_y);
+    fCafTree->Branch("reco_track_end_z", &reco_track_end_z);
+    fCafTree->Branch("reco_pdg", &reco_pdg);
+    fCafTree->Branch("reco_ixn_index", &reco_ixn_index);
 
-    fRecoTree->Branch("true_energy", &true_energy);
-    fRecoTree->Branch("true_p_x", &true_p_x);
-    fRecoTree->Branch("true_p_y", &true_p_y);
-    fRecoTree->Branch("true_p_z", &true_p_z);
-    fRecoTree->Branch("true_p_mag", &true_p_mag);
-    fRecoTree->Branch("true_length", &true_length);
-    fRecoTree->Branch("true_angle", &true_angle);
-    fRecoTree->Branch("true_angle_rot", &true_angle_rot);
-    fRecoTree->Branch("true_angle_incl", &true_angle_incl);
-    fRecoTree->Branch("true_angle_x", &true_angle_x);
-    fRecoTree->Branch("true_angle_y", &true_angle_y);
-    fRecoTree->Branch("true_angle_z", &true_angle_z);
-    fRecoTree->Branch("true_track_start_x", &true_track_start_x);
-    fRecoTree->Branch("true_track_start_y", &true_track_start_y);
-    fRecoTree->Branch("true_track_start_z", &true_track_start_z);
-    fRecoTree->Branch("true_track_end_x", &true_track_end_x);
-    fRecoTree->Branch("true_track_end_y", &true_track_end_y);
-    fRecoTree->Branch("true_track_end_z", &true_track_end_z);
-    fRecoTree->Branch("true_pdg", &true_pdg);
-    fRecoTree->Branch("true_nproton", &true_nproton);
-    fRecoTree->Branch("true_nmuon", &true_nmuon);
-    fRecoTree->Branch("interaction_id", &interaction_id);
-    fRecoTree->Branch("true_ixn_index", &true_ixn_index);
+    fCafTree->Branch("true_energy", &true_energy);
+    fCafTree->Branch("true_p_x", &true_p_x);
+    fCafTree->Branch("true_p_y", &true_p_y);
+    fCafTree->Branch("true_p_z", &true_p_z);
+    fCafTree->Branch("true_p_mag", &true_p_mag);
+    fCafTree->Branch("true_length", &true_length);
+    fCafTree->Branch("true_angle", &true_angle);
+    fCafTree->Branch("true_angle_rot", &true_angle_rot);
+    fCafTree->Branch("true_angle_incl", &true_angle_incl);
+    fCafTree->Branch("true_angle_x", &true_angle_x);
+    fCafTree->Branch("true_angle_y", &true_angle_y);
+    fCafTree->Branch("true_angle_z", &true_angle_z);
+    fCafTree->Branch("true_track_start_x", &true_track_start_x);
+    fCafTree->Branch("true_track_start_y", &true_track_start_y);
+    fCafTree->Branch("true_track_start_z", &true_track_start_z);
+    fCafTree->Branch("true_track_end_x", &true_track_end_x);
+    fCafTree->Branch("true_track_end_y", &true_track_end_y);
+    fCafTree->Branch("true_track_end_z", &true_track_end_z);
+    fCafTree->Branch("true_pdg", &true_pdg);
+    fCafTree->Branch("true_nproton", &true_nproton);
+    fCafTree->Branch("true_nmuon", &true_nmuon);
+    fCafTree->Branch("interaction_id", &interaction_id);
+    fCafTree->Branch("true_ixn_index", &true_ixn_index);
 
-    fRecoTree->Branch("overlap", &overlap);
-    fRecoTree->Branch("spill_index", &spill_index);
-    fRecoTree->Branch("file_index", &file_index);
-    fRecoTree->Branch("event", &event);
-    fRecoTree->Branch("run", &run);
-    fRecoTree->Branch("subrun", &subrun);
-    fRecoTree->Branch("caf_file_name", &caf_file_name);
+    fCafTree->Branch("overlap", &overlap);
+    fCafTree->Branch("spill_index", &spill_index);
+    fCafTree->Branch("file_index", &file_index);
+    fCafTree->Branch("event", &event);
+    fCafTree->Branch("run", &run);
+    fCafTree->Branch("subrun", &subrun);
+    fCafTree->Branch("caf_file_name", &caf_file_name);
 
 
     //Beam direction -3.343 degrees in y
@@ -423,8 +423,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
 
     // POPULATE: Fill TTree and write to output ROOT file
-    fRecoTree->Fill();
-    fRecoTree->Write();
+    fCafTree->Fill();
+    fCafTree->Write();
         
     std::cout << "Filled and wrote TTree." << std::endl;
 
