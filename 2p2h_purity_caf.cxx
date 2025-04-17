@@ -113,7 +113,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< int >     true_pdg;
     std::vector< int >     true_nproton;
     std::vector< int >     true_nmuon;
-    std::vector< int >     interaction_id;
+    std::vector< int >     interaction_id; 
+    std::vector< int >     iscc;
+    std::vector< int >     mode; //rec.mc.nu.mode START INCLUDING THIS
 
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
@@ -169,7 +171,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("true_track_end_z", &true_track_end_z);
     fCafTree->Branch("true_pdg", &true_pdg);
     fCafTree->Branch("true_nproton", &true_nproton);
-    fCafTree->Branch("true_nmuon", &true_nmuon);
     fCafTree->Branch("interaction_id", &interaction_id);
     fCafTree->Branch("true_ixn_index", &true_ixn_index);
 
@@ -395,6 +396,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     true_track_end_z.push_back(truth_match->end_pos.z);
                     true_pdg.push_back(truth_match->pdg);
                     true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
+                    interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
                     reco_ixn_index.push_back(ixn);
@@ -404,6 +406,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     run.push_back(sr->meta.nd_lar.run);
                     subrun.push_back(sr->meta.nd_lar.subrun);
                     caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
+
+                    //rec.mc.nu.iscc, rec.mc.nu.genieIdx, rec.mc.nu.id, rec.mc.nu.genVersion..idx, rec.mc.nu.mode
 
                 } // End of particle loop
 
