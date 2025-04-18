@@ -228,6 +228,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             // Loop over each reco interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
+                bool reco_passes = false;
+                bool truth_passes = false;
+
                 const auto& reco_ixn = sr->common.ixn.dlp[ixn];
                 const auto& vtx = reco_ixn.vtx;
 
@@ -283,8 +286,35 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         reco_npion++;
                 }
 
-                // If interaction is not CC2p1mu0pi, go to next interaction             
-                if(reco_nproton != 2 || reco_nmuon != 1 || reco_npion > 0)
+                if(reco_nproton == 2 & reco_nmuon == 1 & reco_npion == 0) // Check if reco passes
+                    reco_passes = true;
+
+                // Count number of relevant (truth) particles
+                auto truth_nproton = 0;
+                auto truth_npion = 0;
+                auto truth_nmuon = 0;
+                for(unsigned long ipart = 0; ipart < truth_ixn.prim.size(); ++ipart)
+                {
+                    const auto& part = truth_ixn.prim[ipart];
+
+                    auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
+
+                    if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
+                        truth_nproton++;
+
+                    if(part.pdg == 13)
+                        truth_nmuon++;
+
+                    if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
+                        truth_npion++;
+                }
+                
+                if(truth_nproton == 2 & truth_nmuon == 1 & truth_npion == 0) // Check if truth passes
+                    truth_passes = true;
+
+                // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction
+                // If interaction passes either reco or truth, save the information         
+                if(reco_passes == false & truth_passes == false)
                     continue;
 
                 // Loop over particles in reco interaction
@@ -421,7 +451,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_output_1.1";
+    std::string file_name = "2p2h_purity_eff_output_1.0";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
