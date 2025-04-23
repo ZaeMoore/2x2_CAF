@@ -84,6 +84,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_angle_x;
     std::vector< double >  reco_angle_y;
     std::vector< double >  reco_angle_z;
+    std::vector< double >  reco_vtx_x;
+    std::vector< double >  reco_vtx_y;
+    std::vector< double >  reco_vtx_z;
     std::vector< double >  reco_track_start_x;
     std::vector< double >  reco_track_start_y;
     std::vector< double >  reco_track_start_z;
@@ -104,6 +107,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  true_angle_x;
     std::vector< double >  true_angle_y;
     std::vector< double >  true_angle_z;
+    std::vector< double >  true_vtx_x;
+    std::vector< double >  true_vtx_y;
+    std::vector< double >  true_vtx_z;
     std::vector< double >  true_track_start_x;
     std::vector< double >  true_track_start_y;
     std::vector< double >  true_track_start_z;
@@ -114,8 +120,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< int >     true_nproton;
     std::vector< int >     true_nmuon;
     std::vector< int >     interaction_id; 
-    std::vector< int >     iscc;
-    std::vector< int >     mode; //rec.mc.nu.mode START INCLUDING THIS
+    std::vector< int >     mode;
 
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
@@ -142,6 +147,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("reco_angle_x", &reco_angle_x);
     fCafTree->Branch("reco_angle_y", &reco_angle_y);
     fCafTree->Branch("reco_angle_z", &reco_angle_z);
+    fCafTree->Branch("reco_vtx_x", &reco_vtx_x);
+    fCafTree->Branch("reco_vtx_y", &reco_vtx_y);
+    fCafTree->Branch("reco_vtx_z", &reco_vtx_z);
     fCafTree->Branch("reco_track_start_x", &reco_track_start_x);
     fCafTree->Branch("reco_track_start_y", &reco_track_start_y);
     fCafTree->Branch("reco_track_start_z", &reco_track_start_z);
@@ -163,6 +171,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("true_angle_x", &true_angle_x);
     fCafTree->Branch("true_angle_y", &true_angle_y);
     fCafTree->Branch("true_angle_z", &true_angle_z);
+    fCafTree->Branch("true_vtx_x", &true_vtx_x);
+    fCafTree->Branch("true_vtx_y", &true_vtx_y);
+    fCafTree->Branch("true_vtx_z", &true_vtx_z);
     fCafTree->Branch("true_track_start_x", &true_track_start_x);
     fCafTree->Branch("true_track_start_y", &true_track_start_y);
     fCafTree->Branch("true_track_start_z", &true_track_start_z);
@@ -173,6 +184,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("true_nproton", &true_nproton);
     fCafTree->Branch("interaction_id", &interaction_id);
     fCafTree->Branch("true_ixn_index", &true_ixn_index);
+    fCafTree->Branch("mode", &mode);
 
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
@@ -286,7 +298,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         reco_npion++;
                 }
 
-                if(reco_nproton == 2 & reco_nmuon == 1 & reco_npion == 0) // Check if reco passes
+                if((reco_nproton == 2) & (reco_nmuon == 1) & (reco_npion == 0)) // Check if reco passes
                     reco_passes = true;
 
                 // Count number of relevant (truth) particles
@@ -309,12 +321,15 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         truth_npion++;
                 }
                 
-                if(truth_nproton == 2 & truth_nmuon == 1 & truth_npion == 0) // Check if truth passes
+                // Require mode of interaction to be MEC for truth (mode = 10)
+                auto truth_mode = truth_ixn.mode;
+
+                if((truth_nproton == 2) & (truth_nmuon == 1) & (truth_npion == 0) & (truth_mode == 10)) // Check if truth passes
                     truth_passes = true;
 
                 // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction
                 // If interaction passes either reco or truth, save the information         
-                if(reco_passes == false & truth_passes == false)
+                if((reco_passes == false) & (truth_passes == false))
                     continue;
 
                 // Loop over particles in reco interaction
@@ -361,23 +376,24 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     // Get/calculate various reco/truth quantities
                     auto pvec = TVector3(part.p.x, part.p.y, part.p.z);
                     auto dir = TVector3(part.end.x, part.end.y, part.end.z) - TVector3(part.start.x, part.start.y, part.start.z);
-                    auto cos_angle = TMath::Cos(dir.Angle(beam_dir)); //Calculate cos of angle wrt neutrino beam direction
+                    //auto cos_angle = TMath::Cos(dir.Angle(beam_dir)); //Calculate cos of angle wrt neutrino beam direction
                     dir.RotateY(-TMath::Pi()/2);
-                    auto cos_rot_anode_angle = TMath::Cos(dir.Theta()); //Calculate cos of track rotational angle (projection on anode)
-                    auto cos_incl_anode_angle = TMath::Cos(dir.Phi()); //Calculate cos of track inclination angle (off of anode)
+                    //auto cos_rot_anode_angle = TMath::Cos(dir.Theta()); //Calculate cos of track rotational angle (projection on anode)
+                    //auto cos_incl_anode_angle = TMath::Cos(dir.Phi()); //Calculate cos of track inclination angle (off of anode)
                     dir.RotateY(TMath::Pi()/2);
                     auto length = dir.Mag();
 
                     auto true_pvec = TVector3(truth_match->p.px, truth_match->p.py, truth_match->p.pz);
                     auto true_dir = TVector3(truth_match->end_pos.x, truth_match->end_pos.y, truth_match->end_pos.z) - TVector3(truth_match->start_pos.x, truth_match->start_pos.y, truth_match->start_pos.z);
-                    auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
+                    //auto true_cos_angle = TMath::Cos(true_dir.Angle(beam_dir));
                     true_dir.RotateY(TMath::Pi()/2);
                     auto true_length_val = true_dir.Mag();
 
-                    auto T_diff = truth_match->p.E - part.E;
-                    auto p_diff = true_pvec.Mag() - pvec.Mag();
-                    auto length_diff = true_length_val - length;
-                    auto cos_angle_diff = true_cos_angle - cos_angle;
+                    // Currently unused
+                    //auto T_diff = truth_match->p.E - part.E;
+                    //auto p_diff = true_pvec.Mag() - pvec.Mag();
+                    //auto length_diff = true_length_val - length;
+                    //auto cos_angle_diff = true_cos_angle - cos_angle;
 
                     dir.RotateY(-TMath::Pi()/2);
                     true_dir.RotateY(-TMath::Pi()/2);
@@ -397,6 +413,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     dir.RotateY(-TMath::Pi()/2);
                     reco_angle_rot.push_back(dir.Theta());
                     reco_angle_incl.push_back(dir.Phi());
+                    reco_vtx_x.push_back(sr->common.ixn.dlp[ixn].vtx.x);
+                    reco_vtx_y.push_back(sr->common.ixn.dlp[ixn].vtx.y);
+                    reco_vtx_z.push_back(sr->common.ixn.dlp[ixn].vtx.z);
                     reco_track_start_x.push_back(part.start.x);
                     reco_track_start_y.push_back(part.start.y);
                     reco_track_start_z.push_back(part.start.z);
@@ -418,6 +437,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     true_dir.RotateY(-TMath::Pi()/2);
                     true_angle_rot.push_back(true_dir.Theta());
                     true_angle_incl.push_back(true_dir.Phi());
+                    true_vtx_x.push_back(sr->mc.nu[truth_id.ixn].vtx.x);
+                    true_vtx_y.push_back(sr->mc.nu[truth_id.ixn].vtx.y);
+                    true_vtx_z.push_back(sr->mc.nu[truth_id.ixn].vtx.z);
                     true_track_start_x.push_back(truth_match->start_pos.x);
                     true_track_start_y.push_back(truth_match->start_pos.y);
                     true_track_start_z.push_back(truth_match->start_pos.z);
@@ -426,6 +448,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     true_track_end_z.push_back(truth_match->end_pos.z);
                     true_pdg.push_back(truth_match->pdg);
                     true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
+                    mode.push_back(sr->mc.nu[truth_id.ixn].mode); //rec.mc.nu.mode
                     interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
@@ -436,8 +459,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     run.push_back(sr->meta.nd_lar.run);
                     subrun.push_back(sr->meta.nd_lar.subrun);
                     caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
-
-                    //rec.mc.nu.iscc, rec.mc.nu.genieIdx, rec.mc.nu.id, rec.mc.nu.genVersion..idx, rec.mc.nu.mode
 
                 } // End of particle loop
 
@@ -451,7 +472,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_output_1.0";
+    std::string file_name = "2p2h_purity_eff_output_1.1";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
