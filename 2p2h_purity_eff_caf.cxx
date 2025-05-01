@@ -291,7 +291,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     if(part.pdg == 2212) // Cut low momentum protons under 10? MeV
                         reco_nproton++;
 
-                    if(part.pdg == 13)
+                    if(part.pdg == 13 || part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
                         reco_nmuon++;
 
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
@@ -314,7 +314,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
                         truth_nproton++;
 
-                    if(part.pdg == 13)
+                    if(part.pdg == 13 and part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
                         truth_nmuon++;
 
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
@@ -472,7 +472,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_output_1.1";
+    std::string file_name = "2p2h_purity_eff_output_1.2";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");

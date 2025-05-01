@@ -278,7 +278,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
                         truth_nproton++;
 
-                    if(part.pdg == 13)
+                    if(part.pdg == 13 || part.pdg == -13)
                         truth_nmuon++;
 
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)

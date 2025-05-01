@@ -224,7 +224,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     }
                         
 
-                    if(part.pdg == 13) // muon
+                    if(part.pdg == 13 || part.pdg == -13) // muon and anti muon
                     {
                         nmuon++;
                         mu_start_x.push_back(part.start.x);
@@ -324,7 +324,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2x2_2p2h_output_1.3";
+    std::string file_name = "2x2_2p2h_output_1.4";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
