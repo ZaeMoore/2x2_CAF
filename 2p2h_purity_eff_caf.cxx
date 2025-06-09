@@ -94,6 +94,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_track_end_y;
     std::vector< double >  reco_track_end_z;
     std::vector< int >     reco_pdg;
+    std::vector< double >  reco_enu_calo;
 
     std::vector< double >  true_energy;
     std::vector< double >  true_p_x; 
@@ -121,6 +122,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< int >     true_nmuon;
     std::vector< int >     interaction_id; 
     std::vector< int >     mode;
+    std::vector< double >  nu_momentum_x;
+    std::vector< double >  nu_momentum_y;
+    std::vector< double >  nu_momentum_z;
 
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
@@ -158,6 +162,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("reco_track_end_z", &reco_track_end_z);
     fCafTree->Branch("reco_pdg", &reco_pdg);
     fCafTree->Branch("reco_ixn_index", &reco_ixn_index);
+    fCafTree->Branch("reco_enu_calo", &reco_enu_calo);
 
     fCafTree->Branch("true_energy", &true_energy);
     fCafTree->Branch("true_p_x", &true_p_x);
@@ -185,6 +190,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("interaction_id", &interaction_id);
     fCafTree->Branch("true_ixn_index", &true_ixn_index);
     fCafTree->Branch("mode", &mode);
+    fCafTree->Branch("nu_momentum_x", &nu_momentum_x);
+    fCafTree->Branch("nu_momentum_y", &nu_momentum_y);
+    fCafTree->Branch("nu_momentum_z", &nu_momentum_z);
 
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
@@ -423,6 +431,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     reco_track_end_y.push_back(part.end.y);
                     reco_track_end_z.push_back(part.end.z);
                     reco_pdg.push_back(part.pdg);
+                    reco_enu_calo.push_back(sr->common.ixn.dlp[ixn].Enu.calo);
                     true_energy.push_back(truth_match->p.E);
                     true_p_x.push_back(truth_match->p.px); 
                     true_p_y.push_back(truth_match->p.py); 
@@ -449,6 +458,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     true_pdg.push_back(truth_match->pdg);
                     true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
                     mode.push_back(sr->mc.nu[truth_id.ixn].mode); //rec.mc.nu.mode
+                    nu_momentum_x.push_back(sr->mc.nu[truth_id.ixn].momentum.x);
+                    nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
+                    nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
                     interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
@@ -472,7 +484,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_output_1.2";
+    std::string file_name = "2p2h_purity_eff_output_1.4";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
