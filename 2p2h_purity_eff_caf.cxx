@@ -332,7 +332,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 // Require mode of interaction to be MEC for truth (mode = 10)
                 auto truth_mode = truth_ixn.mode;
 
-                if((truth_nproton == 2) & (truth_nmuon == 1) & (truth_npion == 0) & (truth_mode == 10)) // Check if truth passes
+                if((truth_nproton == 2) & (truth_nmuon == 1) & (truth_npion == 0))// & (truth_mode == 10)) // Check if truth passes
                     truth_passes = true;
 
                 // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction
@@ -484,7 +484,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_output_1.4";
+    std::string file_name = "2p2h_purity_eff_output_1.5";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
