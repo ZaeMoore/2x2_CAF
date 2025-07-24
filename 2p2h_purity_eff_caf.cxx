@@ -125,6 +125,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  nu_momentum_x;
     std::vector< double >  nu_momentum_y;
     std::vector< double >  nu_momentum_z;
+    std::vector< double >  genweight;
 
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
@@ -193,6 +194,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("nu_momentum_x", &nu_momentum_x);
     fCafTree->Branch("nu_momentum_y", &nu_momentum_y);
     fCafTree->Branch("nu_momentum_z", &nu_momentum_z);
+    fCafTree->Branch("genweight", &genweight);
 
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
@@ -461,6 +463,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     nu_momentum_x.push_back(sr->mc.nu[truth_id.ixn].momentum.x);
                     nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
                     nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
+                    genweight.push_back(sr->mc.nu[truth_id.ixn].genweight);
                     interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
