@@ -298,7 +298,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     
                     auto pmag = (TVector3(part.p.x, part.p.y, part.p.z)).Mag();
 
-                    if(part.pdg == 2212) // Cut low momentum protons under 10? MeV
+                    if(part.pdg == 2212)
                         reco_nproton++;
 
                     if(part.pdg == 13 || part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
@@ -321,7 +321,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
 
-                    if(part.pdg == 2212) // Cut low momentum protons under 10 MeV
+                    if(part.pdg == 2212) 
                         truth_nproton++;
 
                     if(part.pdg == 13 and part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
