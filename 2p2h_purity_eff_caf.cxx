@@ -296,7 +296,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 {
                     const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
                     
-                    auto pmag = (TVector3(part.p.x, part.p.y, part.p.z)).Mag();
+                    //auto pmag = (TVector3(part.p.x, part.p.y, part.p.z)).Mag();
 
                     if(part.pdg == 2212)
                         reco_nproton++;
@@ -319,7 +319,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 {
                     const auto& part = truth_ixn.prim[ipart];
 
-                    auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
+                    //auto pmag = (TVector3(part.p.px, part.p.py, part.p.pz)).Mag();
 
                     if(part.pdg == 2212) 
                         truth_nproton++;
