@@ -125,8 +125,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  nu_momentum_x;
     std::vector< double >  nu_momentum_y;
     std::vector< double >  nu_momentum_z;
+    
     std::vector< double >  genweight;
-
+    std::vector< double >  genVersion;
+    std::vector< double >  genVersion_length;
+    std::vector< double >  genVersion_totarraysize;
+    std::vector< double >  genVersion_idx;
+    std::vector< double >  generator;
+    std::vector< double >  imp_weight;
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
     std::vector< double >  reco_ixn_index;
@@ -487,7 +493,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_output_1.5";
+    std::string file_name = "2p2h_purity_eff_m6.3_1.1";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
