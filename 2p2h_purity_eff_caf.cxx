@@ -127,10 +127,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  nu_momentum_z;
     
     std::vector< double >  genweight;
-    std::vector< double >  genVersion;
-    std::vector< double >  genVersion_length;
-    std::vector< double >  genVersion_totarraysize;
-    std::vector< double >  genVersion_idx;
     std::vector< double >  generator;
     std::vector< double >  imp_weight;
     std::vector< double >  overlap;
@@ -200,8 +196,10 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("nu_momentum_x", &nu_momentum_x);
     fCafTree->Branch("nu_momentum_y", &nu_momentum_y);
     fCafTree->Branch("nu_momentum_z", &nu_momentum_z);
+    
     fCafTree->Branch("genweight", &genweight);
-
+    fCafTree->Branch("generator", &generator);
+    fCafTree->Branch("imp_weight", &imp_weight);
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
     fCafTree->Branch("file_index", &file_index);
@@ -209,7 +207,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("run", &run);
     fCafTree->Branch("subrun", &subrun);
     fCafTree->Branch("caf_file_name", &caf_file_name);
-
 
     //Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
@@ -440,6 +437,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     reco_track_end_z.push_back(part.end.z);
                     reco_pdg.push_back(part.pdg);
                     reco_enu_calo.push_back(sr->common.ixn.dlp[ixn].Enu.calo);
+
                     true_energy.push_back(truth_match->p.E);
                     true_p_x.push_back(truth_match->p.px); 
                     true_p_y.push_back(truth_match->p.py); 
@@ -469,7 +467,10 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     nu_momentum_x.push_back(sr->mc.nu[truth_id.ixn].momentum.x);
                     nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
                     nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
+
                     genweight.push_back(sr->mc.nu[truth_id.ixn].genweight);
+                    generator.push_back(sr->mc.nu[truth_id.ixn].generator);
+                    imp_weight.push_back(sr->mc.nu[truth_id.ixn].imp_weight);
                     interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
