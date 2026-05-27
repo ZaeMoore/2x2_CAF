@@ -12,18 +12,23 @@
 #include <vector>
 #include <cmath>
 #include <math.h>
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
-#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
+//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
+//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
 
-float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) {
+// Same as new purity and efficiency code, but with no minerva matching
+
+float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) 
+{
   float product = 0;
   for (int i = 0; i < Dimension; i++)
     product = product + vector_a[i] * vector_b[i];
   return product;
 }
 
-bool contained(double x, double y, double z){
+bool contained(double x, double y, double z)
+{
     double tpc_dist = 8.0; // distance from the tpc walls for containment cuts
     double xbound = 63.931;
     double ybound = 62.076;
@@ -126,9 +131,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  nu_momentum_y;
     std::vector< double >  nu_momentum_z;
     
-    std::vector< double >  genweight;
-    std::vector< double >  generator;
-    std::vector< double >  imp_weight;
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
     std::vector< double >  reco_ixn_index;
@@ -197,9 +199,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("nu_momentum_y", &nu_momentum_y);
     fCafTree->Branch("nu_momentum_z", &nu_momentum_z);
     
-    fCafTree->Branch("genweight", &genweight);
-    fCafTree->Branch("generator", &generator);
-    fCafTree->Branch("imp_weight", &imp_weight);
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
     fCafTree->Branch("file_index", &file_index);
@@ -468,9 +467,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
                     nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
 
-                    genweight.push_back(sr->mc.nu[truth_id.ixn].genweight);
-                    generator.push_back(sr->mc.nu[truth_id.ixn].generator);
-                    imp_weight.push_back(sr->mc.nu[truth_id.ixn].imp_weight);
                     interaction_id.push_back(truth_match->interaction_id); //rec.mc.nu.prim.interaction_id
                     overlap.push_back(current_max);
                     true_ixn_index.push_back(truth_idx);
@@ -494,7 +490,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_m6.3_1.1";
+    std::string file_name = "2p2h_purity_eff_m6.5";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");

@@ -1,3 +1,8 @@
+/*
+Analysis of 2x2 sandbox files
+Selects only 2p2h events and saves them to a separate root file
+*/
+
 #include <iostream>
 #include <TCanvas.h>
 #include <TTree.h>

@@ -1,0 +1,68 @@
+for (long unsigned npart = 0;
+           npart < sr->common.ixn.dlp[nixn].part.dlp.size();
+           npart++) { // loop over particles
+      //  if (!sr->common.ixn.dlp[nixn].part.dlp[npart].primary)
+      //    continue;
+        int pdg = sr->common.ixn.dlp[nixn].part.dlp[npart].pdg;
+        // Loop over primary tracks
+        if ((abs(pdg) == 2212 || abs(pdg) == 13 || abs(pdg) == 211 ||
+             abs(pdg) == 321)) {
+
+          const auto& start_pos = sr->common.ixn.dlp[nixn].part.dlp[npart].start;
+          const auto& end_pos = sr->common.ixn.dlp[nixn].part.dlp[npart].end;
+          double diffVertexdZ =
+              abs(start_pos.z - sr->common.ixn.dlp[nixn].vtx.z);
+          double diffVertexdX =
+              abs(start_pos.x - sr->common.ixn.dlp[nixn].vtx.x);
+          double diffVertexdY =
+              abs(start_pos.y - sr->common.ixn.dlp[nixn].vtx.y);
+          double diffVertex = TMath::Sqrt(diffVertexdZ * diffVertexdZ +
+                                          diffVertexdY * diffVertexdY +
+                                          diffVertexdX * diffVertexdX);
+          if (diffVertex > 5)
+            continue;
+          // Make sure it is near the vertex
+          double dX = (end_pos.x - start_pos.x);
+          double dY = (end_pos.y - start_pos.y);
+          double dZ = (end_pos.z - start_pos.z);
+          double length = TMath::Sqrt(dX * dX + dY * dY + dZ * dZ);
+          double dirX = dX / length;
+          double dirY = dY / length;
+          double dirZ = dZ / length;
+
+
+          if (std::isnan(start_pos.z))
+            length = -999;
+          if (length > longestTrk)
+            longestTrk = length;
+          // Make sure it is above the track threshold
+          if (sr->common.ixn.dlp[nixn].part.dlp[npart].primary == true &&
+              length > minTrkLength) {
+            partMult++;
+            trackMult++;
+            // see if it punches out and match it to MINERvA
+            if ((start_pos.z) > 62 || (end_pos.z) > 62)
+              trackMultExit++;
+            int maxPartMinerva = -999;
+            int maxTypeMinerva = -999;
+            int maxIxnMinerva = -999;
+            int maxPartMinervaUS = -999;
+            int maxTypeMinervaUS = -999;
+            if ((abs(start_pos.z) > 62 || abs(end_pos.z) > 62)) {
+              int minervaPass = 0;
+              double dotProductDS = -999;
+              double deltaExtrapYUS = -999;
+              double deltaExtrapY = -999;
+              double dotProductUS = -999;
+              double deltaExtrapX = -999;
+              double deltaExtrapXUS = -999;
+              double dotProductFromCAF=-999;
+
+        	 	for(int k=0; k<sr->nd.trkmatch.extrap.size(); k++){
+                if (sr->nd.trkmatch.extrap[k].larid.ixn!=nixn || sr->nd.trkmatch.extrap[k].larid.reco!=1) continue;
+                    int index=sr->nd.trkmatch.extrap[k].larid.idx;
+                    if (sr->nd.lar.dlp[nixn].tracks[index].start.z==sr->common.ixn.dlp[nixn].part.dlp[npart].start.z && sr->nd.lar.dlp[nixn].tracks[index].end.z==sr->common.ixn.dlp[nixn].part.dlp[npart].end.z){
+                   double dotProductTemp=abs(sr->nd.trkmatch.extrap[k].angdispl);
+                    if (dotProductTemp<0.99) continue;
+                 int i=sr->nd.trkmatch.extrap[k].minervaid.ixn;
+                 int j=sr->nd.trkmatch.extrap[k].minervaid.idx;
