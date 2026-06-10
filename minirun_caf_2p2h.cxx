@@ -1,5 +1,16 @@
 /*
 Analysis of MiniRun CAF files
+
+Zae Moore
+
+To be run on DUNE GPVMs
+
+Input: A .list file contained the paths to every CAF file
+
+Output: A ROOT file with information on all events that pass the
+reco and/or truth level cuts
+
+To add: Save plot of something to see how it looks
 */
 
 #include <iostream>
@@ -18,11 +29,15 @@ Analysis of MiniRun CAF files
 #include <vector>
 #include <cmath>
 #include <math.h>
-//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
-//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_06_01b/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #include "duneanaobj/StandardRecord/Proxy/SRProxy.h"
 #define Dimension 3
+//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
+//#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_06_01b/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 
+
+/*
+Dot product function between 2 vectors
+*/
 float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) 
 {
   float product = 0;
@@ -31,6 +46,10 @@ float dot_product(std::vector<float> vector_a, std::vector<float> vector_b)
   return product;
 }
 
+/*
+Is the point vertex contained within the TPC fiducial volume? 
+Fiducial volume defined as 8 cm from each TPC wall
+*/
 bool contained(double x, double y, double z)
 {
     double tpc_dist = 8.0; // distance from the tpc walls for containment cuts
@@ -46,13 +65,43 @@ bool contained(double x, double y, double z)
     return cont;
 }
 
+/*
+Truth level cuts
+Applied in line 420
+*/
+bool truth_cuts(int nproton, int nmuon, int npion)
+{
+    if((nproton == 2) & (nmuon == 1) & (npion == 0))
+    {
+        return true;
+    }
+    return false;
+}
+
+/*
+Reco level cuts 
+Applied in line 395
+If changing to multinucleon, change 2 protons to >= 2 protons
+*/
+bool reco_cuts(int nproton, int nmuon, int npion)
+{
+    if((nproton == 2) & (nmuon == 1) & (npion == 0))
+    {
+        return true;
+    }
+    return false;
+}
+
+/*
+Main function to loop through CAF files
+*/
 int caf_plotter(std::string file_list, bool is_flat = true)
 {
 
     std::vector<std::string> root_list;
     std::ifstream fin(file_list, std::ios::in);
 
-    //Check if file exists
+    // Check if file exists
     if(!fin.is_open())
     {
         std::cerr << "Failed to open " << file_list << std::endl;
@@ -64,14 +113,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
         std::cout << "Reading " << file_list << " for input ROOT files." << std::endl;
         std::string name;
         
-        //Add name of each file to root_list
+        // Add name of each file to root_list
         while(std::getline(fin, name))
         {
             root_list.push_back(name);
         }
     }
 
-    //Check if list of files is empty
+    // Check if list of files is empty
     if(root_list.empty())
     {
         std::cerr << "No input ROOT files. Exiting." << std::endl;
@@ -82,7 +131,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     int num_events = 0;
 
-    // DEFINE: Vectors to hold information to keep in output TTree file
+    // DEFINE: Vectors to hold information to keep in output ROOT TTree file
     std::vector< double >  reco_energy;
     std::vector< double >  reco_p_x; 
     std::vector< double >  reco_p_y; 
@@ -152,7 +201,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  minerva_track_len_cm;
   
     std::vector< int >     num_events_total;
-
     std::vector< double >  overlap;
     std::vector< double >  true_ixn_index;
     std::vector< double >  reco_ixn_index;
@@ -245,20 +293,20 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("subrun", &subrun);
     fCafTree->Branch("caf_file_name", &caf_file_name);
 
-    //Beam direction -3.343 degrees in y
+    // Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
 
-    //z-direction (roughly beam dir)
+    // z-direction (roughly beam dir)
     const auto z_plus_dir = TVector3(0, 0, 1.0);
     const auto y_plus_dir = TVector3(0, 1.0, 0.0);
     const auto x_plus_dir = TVector3(1.0, 0, 0.0);
 
-    //negative y-direction 
+    // negative y-direction 
     const auto y_minus_dir = TVector3(0, -1.0, 0.0);
 
     double minTrkLength = 3;
 
-    //Loop through files in list
+    // Loop through files in list
     const auto t_start{std::chrono::steady_clock::now()};
     auto file_num = 0;
     for(const auto& f : root_list)
@@ -267,13 +315,13 @@ int caf_plotter(std::string file_list, bool is_flat = true)
         std::cout << "Processing " << f << std::endl;
         file_num++;
 
-        //Open file and attach SRProxy Object
+        // Open file and attach SRProxy Object
         TFile* caf_file = TFile::Open(f.c_str(), "READ");
         TTree* caf_tree = (TTree*)caf_file->Get("cafTree");
         std::string tree_name = is_flat ? "rec" : "";
         auto sr = new caf::SRProxy(caf_tree, tree_name);
 
-        //Loop over each spill
+        // Loop over each spill
         const unsigned long nspills = caf_tree->GetEntries();
         const unsigned int incr = nspills / 10;
         std::cout << "Looping over " << nspills << " entries/spills..." << std::endl;
@@ -302,6 +350,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 int trackMult = 0;
                 int trackMultExit = 0;
 
+                // Reco interaction
                 const auto& reco_ixn = sr->common.ixn.dlp[ixn];
                 const auto& vtx = reco_ixn.vtx;
 
@@ -329,12 +378,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 const auto truth_idx = vec_truth_ixn.at(max_overlap);
                 const auto& truth_ixn = sr->mc.nu[truth_idx];
 
-                // Require reco vertex to be within 
-                bool is_contained = true;
-                is_contained = contained(vtx.x, vtx.y, vtx.z);
-
-                // truth_ixn.ix > 1E9
-                if(is_contained == false || truth_ixn.targetPDG != 1000180400)
+                // If vertex is not contained or target is not argon, skip interaction
+                if(contained(vtx.x, vtx.y, vtx.z) == false || truth_ixn.targetPDG != 1000180400)
                     continue;
 
                 // Count number of relevant (reco) particles
@@ -358,8 +403,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                         reco_npion++;
                 }
 
-                if((reco_nproton == 2) & (reco_nmuon == 1) & (reco_npion == 0)) // Check if reco passes
-                    reco_passes = true;
+                reco_passes = reco_cuts(reco_nproton, reco_nmuon, reco_npion);
 
                 // Count number of relevant (truth) particles
                 auto truth_nproton = 0;
@@ -378,25 +422,21 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
                         truth_npion++;
                 }
-                
-                // Require mode of interaction to be MEC for truth (mode = 10)
-                auto truth_mode = truth_ixn.mode;
 
-                if((truth_nproton == 2) & (truth_nmuon == 1) & (truth_npion == 0))// & (truth_mode == 10)) // Check if truth passes
-                    truth_passes = true;
+                truth_passes = truth_cuts(truth_nproton, truth_nmuon, truth_npion);
 
-                // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction
-                // If interaction passes either reco or truth, save the information         
+                // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction      
                 if((reco_passes == false) & (truth_passes == false))
                     continue;
 
                 // Loop over particles in reco interaction
+                // Now to save information
                 for(unsigned long ipart = 0; ipart < sr->common.ixn.dlp[ixn].part.dlp.size(); ++ipart)
                 {
                     const auto& part = sr->common.ixn.dlp[ixn].part.dlp[ipart];
                     int pdg = part.pdg;
 
-                    // Save info for Minerva track matching
+                    // Save info for Minerva interaction track matching
                     int ixnM;
                     int idxM; 
 
@@ -579,6 +619,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     nu_momentum_x.push_back(sr->mc.nu[truth_id.ixn].momentum.x);
                     nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
                     nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
+
                     // Minerva
                     if (minerva_track == true)
                     {
@@ -637,6 +678,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
+
+    // Plotting code goes here (if desired)
+
 
     // Output TTree file name
     std::string file_name = "2p2h_purity_eff_m6.5_1.2";

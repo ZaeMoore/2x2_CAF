@@ -1,0 +1,75 @@
+File index: 18, Event: 38, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 40
+File index: 30, Event: 188, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 197
+File index: 38, Event: 35, true_ixn_index: 0.0, True PDG codes: [2212, 2212, -13], Spill index: 38
+File index: 45, Event: 117, true_ixn_index: 0.0, True PDG codes: [2212, 2212, -13], Spill index: 124
+File index: 54, Event: 57, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 61
+File index: 70, Event: 177, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, 13], Spill index: 183
+File index: 80, Event: 64, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 68
+File index: 92, Event: 149, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, 13], Spill index: 152
+File index: 95, Event: 175, true_ixn_index: 1.0, True PDG codes: [-13, 2212, 2212], Spill index: 179
+File index: 104, Event: 163, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 172
+File index: 106, Event: 33, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 36
+File index: 112, Event: 112, true_ixn_index: 2.0, True PDG codes: [11, 2212, -13, 2212], Spill index: 120
+File index: 116, Event: 165, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 177
+File index: 140, Event: 149, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 159
+File index: 143, Event: 129, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 131
+File index: 151, Event: 11, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 13
+File index: 164, Event: 37, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, -13, 2212], Spill index: 38
+File index: 196, Event: 56, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 59
+File index: 213, Event: 158, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 171
+File index: 229, Event: 40, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, 13], Spill index: 43
+File index: 232, Event: 171, true_ixn_index: 0.0, True PDG codes: [22, 22, 22, 22, 22, 2212, 2212, -13], Spill index: 183
+File index: 245, Event: 88, true_ixn_index: 3.0, True PDG codes: [2212, 2212, -13], Spill index: 93
+File index: 257, Event: 59, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 61
+File index: 268, Event: 55, true_ixn_index: 0.0, True PDG codes: [22, 11, 2212, -13, 2212], Spill index: 59
+File index: 285, Event: 143, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, -13], Spill index: 148
+File index: 295, Event: 140, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 146
+File index: 322, Event: 85, true_ixn_index: 0.0, True PDG codes: [22, 2212, 2212, -13], Spill index: 86
+File index: 335, Event: 70, true_ixn_index: 0.0, True PDG codes: [2212, -13, 2212], Spill index: 75
+File index: 344, Event: 91, true_ixn_index: 0.0, True PDG codes: [11, 11, 2212, 2212, -13], Spill index: 99
+File index: 357, Event: 146, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, -13], Spill index: 154
+File index: 391, Event: 12, true_ixn_index: 1.0, True PDG codes: [2212, -13, 2212], Spill index: 13
+File index: 415, Event: 163, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 175
+File index: 420, Event: 128, true_ixn_index: 0.0, True PDG codes: [22, 22, 11, 11, 2212, 13, 2212], Spill index: 136
+File index: 420, Event: 138, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 146
+File index: 428, Event: 98, true_ixn_index: 0.0, True PDG codes: [22, 22, 22, 22, 22, 2212, 2212, -13], Spill index: 102
+File index: 434, Event: 126, true_ixn_index: 0.0, True PDG codes: [22, 22, -13, 2212, 2212], Spill index: 133
+File index: 436, Event: 3, true_ixn_index: 0.0, True PDG codes: [22, 22, 11, 11, 22, 2212, 2212, 13], Spill index: 3
+File index: 448, Event: 89, true_ixn_index: 2.0, True PDG codes: [2212, 2212, -13], Spill index: 91
+File index: 461, Event: 163, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 174
+File index: 469, Event: 15, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 16
+File index: 470, Event: 141, true_ixn_index: 4.0, True PDG codes: [2212, -13, 2212], Spill index: 145
+File index: 491, Event: 104, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, -13], Spill index: 111
+File index: 502, Event: 121, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 128
+File index: 513, Event: 63, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 63
+File index: 513, Event: 64, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, -13], Spill index: 64
+File index: 535, Event: 55, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, -13], Spill index: 56
+File index: 543, Event: 184, true_ixn_index: 0.0, True PDG codes: [2212, 2212, -13], Spill index: 190
+File index: 548, Event: 50, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 54
+File index: 558, Event: 120, true_ixn_index: 0.0, True PDG codes: [22, 22, 2212, 2212, 13], Spill index: 126
+File index: 572, Event: 17, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, 13], Spill index: 18
+File index: 575, Event: 173, true_ixn_index: 0.0, True PDG codes: [22, 22, 11, 2212, 2212, 13], Spill index: 182
+File index: 614, Event: 116, true_ixn_index: 0.0, True PDG codes: [22, 2212, 2212, -13], Spill index: 121
+File index: 644, Event: 57, true_ixn_index: 2.0, True PDG codes: [22, 11, 2212, 2212, -13], Spill index: 59
+File index: 658, Event: 79, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 82
+File index: 663, Event: 107, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 111
+File index: 669, Event: 97, true_ixn_index: 1.0, True PDG codes: [2212, 2212, -13], Spill index: 109
+File index: 671, Event: 91, true_ixn_index: 0.0, True PDG codes: [22, 2212, 2212, -13], Spill index: 96
+File index: 688, Event: 165, true_ixn_index: 0.0, True PDG codes: [2212, 2212, 13], Spill index: 179
+File index: 700, Event: 15, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 18
+File index: 723, Event: 133, true_ixn_index: 0.0, True PDG codes: [2212, 2212, -13], Spill index: 143
+File index: 732, Event: 99, true_ixn_index: 2.0, True PDG codes: [2212, 2212, -13], Spill index: 103
+File index: 742, Event: 36, true_ixn_index: 2.0, True PDG codes: [2212, 2212, -13], Spill index: 37
+File index: 763, Event: 95, true_ixn_index: 0.0, True PDG codes: [13, 2212, 2212], Spill index: 102
+File index: 773, Event: 134, true_ixn_index: 0.0, True PDG codes: [2112, 2212, 2212, 13], Spill index: 147
+File index: 786, Event: 30, true_ixn_index: 1.0, True PDG codes: [2212, 2212, 13], Spill index: 31
+File index: 815, Event: 165, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 179
+File index: 826, Event: 154, true_ixn_index: 2.0, True PDG codes: [2212, 2212, -13], Spill index: 161
+File index: 901, Event: 42, true_ixn_index: 5.0, True PDG codes: [2212, 2212, -13], Spill index: 43
+File index: 907, Event: 88, true_ixn_index: 0.0, True PDG codes: [2212, 2212, -13], Spill index: 91
+File index: 910, Event: 3, true_ixn_index: 2.0, True PDG codes: [-11, 22, 2212, 2212, 13], Spill index: 3
+File index: 910, Event: 125, true_ixn_index: 1.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 130
+File index: 913, Event: 33, true_ixn_index: 0.0, True PDG codes: [22, 2212, 2212, -13], Spill index: 37
+File index: 946, Event: 41, true_ixn_index: 0.0, True PDG codes: [11, 2212, 2212, -13], Spill index: 41
+File index: 952, Event: 36, true_ixn_index: 2.0, True PDG codes: [2212, 2212, -13], Spill index: 37
+File index: 954, Event: 147, true_ixn_index: 0.0, True PDG codes: [22, 22, 22, 22, 2212, 2212, -13], Spill index: 153
