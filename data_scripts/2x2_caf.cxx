@@ -1,6 +1,19 @@
 /*
-Analysis of 2x2 sandbox files
-Selects only 2p2h events and saves them to a separate root file
+2x2 data analysis script
+
+Analysis of 2x2 data (sandbox) files
+Selects only multi-proton zero-pion final state events and saves them to a separate root file
+
+To run:
+Compile with compile.sh (edit the script to point to caf_plotter.cxx file)
+Run with ./2x2_caf arg1
+
+Inputs:
+arg1 = path to text file containing list of input root files
+soon: arg2 = path to text file containing list of input systematics root files
+
+Output:
+Root file with TTree containing only multi-proton zero-pion final state events
 */
 
 #include <iostream>
@@ -77,34 +90,26 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::cout << "Finished adding files..." << std::endl;
 
     // DEFINE: Vectors to hold information to keep in output TTree file
-    std::vector< double >  reco_energy;
-    std::vector< double >  reco_p_x; 
-    std::vector< double >  reco_p_y; 
-    std::vector< double >  reco_p_z;
-    std::vector< double >  reco_p_mag;
-    std::vector< double >  reco_length;
-    std::vector< double >  reco_angle;
-    std::vector< double >  reco_angle_rot;
-    std::vector< double >  reco_angle_incl;
-    std::vector< double >  reco_angle_x;
-    std::vector< double >  reco_angle_y;
-    std::vector< double >  reco_angle_z;
-    std::vector< double >  reco_track_start_x;
-    std::vector< double >  reco_track_start_y;
-    std::vector< double >  reco_track_start_z;
-    std::vector< double >  reco_track_end_x;
-    std::vector< double >  reco_track_end_y;
-    std::vector< double >  reco_track_end_z;
-    std::vector< int >     reco_pdg;
-    std::vector< double >  reco_ixn_index;
-
-    std::vector< double >  reco_pandora_energy;
-    std::vector< double >  reco_pandora_p_x;
-    std::vector< double >  reco_pandora_p_y;
-    std::vector< double >  reco_pandora_p_z;
-    std::vector< double >  reco_pandora_p_mag;
-    std::vector< double >  reco_pandora_length;
-    std::vector< double >  reco_pandora_angle;
+    std::vector< double >  track_dlp_e;
+    std::vector< double >  track_dlp_px; 
+    std::vector< double >  track_dlp_py; 
+    std::vector< double >  track_dlp_pz;
+    std::vector< double >  track_dlp_pmag;
+    std::vector< double >  track_dlp_length;
+    std::vector< double >  track_dlp_angle;
+    std::vector< double >  track_dlp_angle_rot;
+    std::vector< double >  track_dlp_angle_incl;
+    std::vector< double >  track_dlp_angle_x;
+    std::vector< double >  track_dlp_angle_y;
+    std::vector< double >  track_dlp_angle_z;
+    std::vector< double >  track_dlp_start_x;
+    std::vector< double >  track_dlp_start_y;
+    std::vector< double >  track_dlp_start_z;
+    std::vector< double >  track_dlp_end_x;
+    std::vector< double >  track_dlp_end_y;
+    std::vector< double >  track_dlp_end_z;
+    std::vector< int >     track_dlp_pdg;
+    std::vector< double >  track_dlp_ixn;
 
     std::vector< int >     spill_index;
     std::vector< int >     file_index;
@@ -116,26 +121,26 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     // DEFINE: TTree and TBranches to go in output ROOT file
     TTree *fCafTree=new TTree("CafTree", "CAF Variables");
-    fCafTree->Branch("reco_energy", &reco_energy);
-    fCafTree->Branch("reco_p_x", &reco_p_x);
-    fCafTree->Branch("reco_p_y", &reco_p_y);
-    fCafTree->Branch("reco_p_z", &reco_p_z);
-    fCafTree->Branch("reco_p_mag", &reco_p_mag);
-    fCafTree->Branch("reco_length", &reco_length);
-    fCafTree->Branch("reco_angle", &reco_angle);
-    fCafTree->Branch("reco_angle_rot", &reco_angle_rot);
-    fCafTree->Branch("reco_angle_incl", &reco_angle_incl);
-    fCafTree->Branch("reco_angle_x", &reco_angle_x);
-    fCafTree->Branch("reco_angle_y", &reco_angle_y);
-    fCafTree->Branch("reco_angle_z", &reco_angle_z);
-    fCafTree->Branch("reco_track_start_x", &reco_track_start_x);
-    fCafTree->Branch("reco_track_start_y", &reco_track_start_y);
-    fCafTree->Branch("reco_track_start_z", &reco_track_start_z);
-    fCafTree->Branch("reco_track_end_x", &reco_track_end_x);
-    fCafTree->Branch("reco_track_end_y", &reco_track_end_y);
-    fCafTree->Branch("reco_track_end_z", &reco_track_end_z);
-    fCafTree->Branch("reco_pdg", &reco_pdg);
-    fCafTree->Branch("reco_ixn_index", &reco_ixn_index);
+    fCafTree->Branch("track_dlp_e", &track_dlp_e);
+    fCafTree->Branch("track_dlp_px", &track_dlp_px);
+    fCafTree->Branch("track_dlp_py", &track_dlp_py);
+    fCafTree->Branch("track_dlp_pz", &track_dlp_pz);
+    fCafTree->Branch("track_dlp_pmag", &track_dlp_pmag);
+    fCafTree->Branch("track_dlp_length", &track_dlp_length);
+    fCafTree->Branch("track_dlp_angle", &track_dlp_angle);
+    fCafTree->Branch("track_dlp_angle_rot", &track_dlp_angle_rot);
+    fCafTree->Branch("track_dlp_angle_incl", &track_dlp_angle_incl);
+    fCafTree->Branch("track_dlp_angle_x", &track_dlp_angle_x);
+    fCafTree->Branch("track_dlp_angle_y", &track_dlp_angle_y);
+    fCafTree->Branch("track_dlp_angle_z", &track_dlp_angle_z);
+    fCafTree->Branch("track_dlp_start_x", &track_dlp_start_x);
+    fCafTree->Branch("track_dlp_start_y", &track_dlp_start_y);
+    fCafTree->Branch("track_dlp_start_z", &track_dlp_start_z);
+    fCafTree->Branch("track_dlp_end_x", &track_dlp_end_x);
+    fCafTree->Branch("track_dlp_end_y", &track_dlp_end_y);
+    fCafTree->Branch("track_dlp_end_z", &track_dlp_end_z);
+    fCafTree->Branch("track_dlp_pdg", &track_dlp_pdg);
+    fCafTree->Branch("track_dlp_ixn", &track_dlp_ixn);
 
     fCafTree->Branch("spill_index", &spill_index);
     fCafTree->Branch("file_index", &file_index);
@@ -290,27 +295,27 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     auto length = dir.Mag();
 
                     // Populate information in vectors for tracks that have passed all cuts
-                    reco_energy.push_back(part.E);
-                    reco_p_x.push_back(part.p.x);
-                    reco_p_y.push_back(part.p.y);
-                    reco_p_z.push_back(part.p.z);
-                    reco_p_mag.push_back(pvec.Mag());
-                    reco_length.push_back(length);
-                    reco_angle.push_back(dir.Angle(beam_dir));
-                    reco_angle_x.push_back(dir.Angle(x_plus_dir));
-                    reco_angle_y.push_back(dir.Angle(y_plus_dir));
-                    reco_angle_z.push_back(dir.Angle(z_plus_dir));
+                    track_dlp_e.push_back(part.E);
+                    track_dlp_px.push_back(part.p.x);
+                    track_dlp_py.push_back(part.p.y);
+                    track_dlp_pz.push_back(part.p.z);
+                    track_dlp_pmag.push_back(pvec.Mag());
+                    track_dlp_length.push_back(length);
+                    track_dlp_angle.push_back(dir.Angle(beam_dir));
+                    track_dlp_angle_x.push_back(dir.Angle(x_plus_dir));
+                    track_dlp_angle_y.push_back(dir.Angle(y_plus_dir));
+                    track_dlp_angle_z.push_back(dir.Angle(z_plus_dir));
                     dir.RotateY(-TMath::Pi()/2);
-                    reco_angle_rot.push_back(dir.Theta());
-                    reco_angle_incl.push_back(dir.Phi());
-                    reco_track_start_x.push_back(part.start.x);
-                    reco_track_start_y.push_back(part.start.y);
-                    reco_track_start_z.push_back(part.start.z);
-                    reco_track_end_x.push_back(part.end.x);
-                    reco_track_end_y.push_back(part.end.y);
-                    reco_track_end_z.push_back(part.end.z);
-                    reco_pdg.push_back(part.pdg);
-                    reco_ixn_index.push_back(ixn);
+                    track_dlp_angle_rot.push_back(dir.Theta());
+                    track_dlp_angle_incl.push_back(dir.Phi());
+                    track_dlp_start_x.push_back(part.start.x);
+                    track_dlp_start_y.push_back(part.start.y);
+                    track_dlp_start_z.push_back(part.start.z);
+                    track_dlp_end_x.push_back(part.end.x);
+                    track_dlp_end_y.push_back(part.end.y);
+                    track_dlp_end_z.push_back(part.end.z);
+                    track_dlp_pdg.push_back(part.pdg);
+                    track_dlp_ixn.push_back(ixn);
                     spill_index.push_back(spill_num);
                     file_index.push_back(file_num);
                     event.push_back(sr->meta.nd_lar.event);
@@ -329,7 +334,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // Output TTree file name
-    std::string file_name = "2x2_2p2h_output_1.4";
+    std::string file_name = "2x2_multip_output";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
