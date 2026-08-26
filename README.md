@@ -3,8 +3,8 @@ Analysis of 2x2 CAF files
 
 Must be run on DUNE GPVMs
 
-Use setup.sh first to set up environment
+Use setup.sh first to set up environment \
 Edit and run compile.sh to compile .cxx scripts
 
-On NERSC: use alias cafshifter: "shifter --image=fermilab/fnal-wn-sl7:latest --module=cvmfs -- /bin/bash"
+On NERSC: use alias cafshifter: "shifter --image=fermilab/fnal-wn-sl7:latest --module=cvmfs -- /bin/bash" \
 Then run setup.sh
