@@ -34,7 +34,6 @@ reco and/or truth level cuts
 //#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
 //#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_06_01b/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
 
-
 /*
 Dot product function between 2 vectors
 */
@@ -71,7 +70,7 @@ Applied in line 420
 */
 bool truth_cuts(int nproton, int nmuon, int npion)
 {
-    if((nproton >= 2) & (nmuon == 1) & (npion == 0))
+    if((nproton >= 2) && (nmuon == 1) && (npion == 0))
     {
         return true;
     }
@@ -84,7 +83,7 @@ Applied in line 395
 */
 bool reco_cuts(int nproton, int nmuon, int npion)
 {
-    if((nproton >= 2) & (nmuon == 1) & (npion == 0))
+    if((nproton >= 2) && (nmuon == 1) && (npion == 0))
     {
         return true;
     }
@@ -92,51 +91,14 @@ bool reco_cuts(int nproton, int nmuon, int npion)
 }
 
 /*
-Main function to loop through CAF files
+Define interaction data
+This will be called at the beginning of the caf plotter function to define these variables for the output tree
+Then will be re-called at the beginning of every interaction loop to reset the variables for each interaction
+Output root file will have a tree with one entry = one interaction
 */
-int caf_plotter(std::string file_list, bool is_flat = true)
+struct InteractionData
 {
-
-    std::vector<std::string> root_list;
-    std::ifstream fin(file_list, std::ios::in);
-
-    // Check if file exists
-    if(!fin.is_open())
-    {
-        std::cerr << "Failed to open " << file_list << std::endl;
-        std::cerr << "Exiting" << std::endl;
-        return 111;
-    }
-    else
-    {
-        std::cout << "Reading " << file_list << " for input ROOT files." << std::endl;
-        std::string name;
-        
-        // Add name of each file to root_list
-        while(std::getline(fin, name))
-        {
-            root_list.push_back(name);
-        }
-    }
-
-    // Check if list of files is empty
-    if(root_list.empty())
-    {
-        std::cerr << "No input ROOT files. Exiting." << std::endl;
-        return 121;
-    }
-
-    std::cout << "Finished adding files..." << std::endl;
-
-    int num_events = 0;
-
-    // Create output file
-    std::string file_name = "multip_analysis_m6.5";
-
-    // DEFINE: Output TFile
-    TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
-
-    // DEFINE: Vectors to hold information to keep in output ROOT TTree file
+    // Particle level reco variables
     std::vector< double >  reco_energy;
     std::vector< double >  reco_p_x; 
     std::vector< double >  reco_p_y; 
@@ -149,9 +111,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_angle_x;
     std::vector< double >  reco_angle_y;
     std::vector< double >  reco_angle_z;
-    std::vector< double >  reco_vtx_x;
-    std::vector< double >  reco_vtx_y;
-    std::vector< double >  reco_vtx_z;
     std::vector< double >  reco_track_start_x;
     std::vector< double >  reco_track_start_y;
     std::vector< double >  reco_track_start_z;
@@ -161,6 +120,12 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< int >     reco_pdg;
     std::vector< double >  reco_enu_calo;
 
+    // Interaction level reco variables
+    double reco_vtx_x;
+    double reco_vtx_y;
+    double reco_vtx_z;
+
+    // Particle level truth variables
     std::vector< double >  true_energy;
     std::vector< double >  true_p_x; 
     std::vector< double >  true_p_y; 
@@ -173,9 +138,6 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  true_angle_x;
     std::vector< double >  true_angle_y;
     std::vector< double >  true_angle_z;
-    std::vector< double >  true_vtx_x;
-    std::vector< double >  true_vtx_y;
-    std::vector< double >  true_vtx_z;
     std::vector< double >  true_track_start_x;
     std::vector< double >  true_track_start_y;
     std::vector< double >  true_track_start_z;
@@ -183,13 +145,20 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  true_track_end_y;
     std::vector< double >  true_track_end_z;
     std::vector< int >     true_pdg;
-    std::vector< int >     true_nproton;
-    std::vector< int >     true_nmuon;
-    std::vector< int >     mode;
-    std::vector< double >  nu_momentum_x;
-    std::vector< double >  nu_momentum_y;
-    std::vector< double >  nu_momentum_z;
 
+    // Interaction level truth variables
+    double true_vtx_x;
+    double true_vtx_y;
+    double true_vtx_z;
+    int true_nproton;
+    int true_nmuon;
+    int true_npion;
+    int mode;
+    double nu_momentum_x;
+    double nu_momentum_y;
+    double nu_momentum_z;
+
+    // Minerva track variables
     std::vector< double >  minerva_track_E;
     std::vector< double >  minerva_track_dir_x;
     std::vector< double >  minerva_track_dir_y;
@@ -204,109 +173,118 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  minerva_track_end_y;
     std::vector< double >  minerva_track_end_z;
     std::vector< double >  minerva_track_len_cm;
-  
-    std::vector< int >     num_events_total;
-    std::vector< double >  overlap;
-    std::vector< double >  true_ixn_index;
-    std::vector< double >  reco_ixn_index;
-    std::vector< int >     spill_index;
-    std::vector< int >     file_index;
-    std::vector< int >     genie_index;
-    std::vector< int >     event;
-    std::vector< int >     run;
-    std::vector< int >     subrun;
-    std::vector<std::string> caf_file_name;
+    
+    // Interaction level variables
+    int events_count;
+    double true_ixn_index;
+    double reco_ixn_index;
+    int spill_index;
+    int file_index;
+    int genie_index;
+    int event;
+    int run;
+    int subrun;
 
-    // systematics
-    // SystWeights tree should have both, caf tree should have just the genie_idx to make sure events match
-    std::vector< std::vector<double> > genie_weights;   // 100 weights per saved particle row
-    std::vector< int > genie_idx;                       // for cross-checking
+    // Systematics
+    std::vector<double> genie_weights;   // 100 weights per saved interaction
+};
 
+/*
+Main function to loop through CAF files
+*/
+int caf_plotter(bool is_flat = true)
+{
+    // Create output file
+    std::string file_name = "multip_analysis_m6.5";
+
+    // DEFINE: Output TFile
+    TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
+
+    // Create the data object
+    InteractionData data;
+    
     // DEFINE: TTree and TBranches to go in output ROOT file
     TTree *fCafTree=new TTree("CafTree", "Caf reco and truth variables");
-    fCafTree->Branch("reco_energy", &reco_energy);
-    fCafTree->Branch("reco_p_x", &reco_p_x);
-    fCafTree->Branch("reco_p_y", &reco_p_y);
-    fCafTree->Branch("reco_p_z", &reco_p_z);
-    fCafTree->Branch("reco_p_mag", &reco_p_mag);
-    fCafTree->Branch("reco_length", &reco_length);
-    fCafTree->Branch("reco_angle", &reco_angle);
-    fCafTree->Branch("reco_angle_rot", &reco_angle_rot);
-    fCafTree->Branch("reco_angle_incl", &reco_angle_incl);
-    fCafTree->Branch("reco_angle_x", &reco_angle_x);
-    fCafTree->Branch("reco_angle_y", &reco_angle_y);
-    fCafTree->Branch("reco_angle_z", &reco_angle_z);
-    fCafTree->Branch("reco_vtx_x", &reco_vtx_x);
-    fCafTree->Branch("reco_vtx_y", &reco_vtx_y);
-    fCafTree->Branch("reco_vtx_z", &reco_vtx_z);
-    fCafTree->Branch("reco_track_start_x", &reco_track_start_x);
-    fCafTree->Branch("reco_track_start_y", &reco_track_start_y);
-    fCafTree->Branch("reco_track_start_z", &reco_track_start_z);
-    fCafTree->Branch("reco_track_end_x", &reco_track_end_x);
-    fCafTree->Branch("reco_track_end_y", &reco_track_end_y);
-    fCafTree->Branch("reco_track_end_z", &reco_track_end_z);
-    fCafTree->Branch("reco_pdg", &reco_pdg);
-    fCafTree->Branch("reco_ixn_index", &reco_ixn_index);
-    fCafTree->Branch("reco_enu_calo", &reco_enu_calo);
+    fCafTree->Branch("reco_energy", &data.reco_energy);
+    fCafTree->Branch("reco_p_x", &data.reco_p_x);
+    fCafTree->Branch("reco_p_y", &data.reco_p_y);
+    fCafTree->Branch("reco_p_z", &data.reco_p_z);
+    fCafTree->Branch("reco_p_mag", &data.reco_p_mag);
+    fCafTree->Branch("reco_length", &data.reco_length);
+    fCafTree->Branch("reco_angle", &data.reco_angle);
+    fCafTree->Branch("reco_angle_rot", &data.reco_angle_rot);
+    fCafTree->Branch("reco_angle_incl", &data.reco_angle_incl);
+    fCafTree->Branch("reco_angle_x", &data.reco_angle_x);
+    fCafTree->Branch("reco_angle_y", &data.reco_angle_y);
+    fCafTree->Branch("reco_angle_z", &data.reco_angle_z);
+    fCafTree->Branch("reco_vtx_x", &data.reco_vtx_x);
+    fCafTree->Branch("reco_vtx_y", &data.reco_vtx_y);
+    fCafTree->Branch("reco_vtx_z", &data.reco_vtx_z);
+    fCafTree->Branch("reco_track_start_x", &data.reco_track_start_x);
+    fCafTree->Branch("reco_track_start_y", &data.reco_track_start_y);
+    fCafTree->Branch("reco_track_start_z", &data.reco_track_start_z);
+    fCafTree->Branch("reco_track_end_x", &data.reco_track_end_x);
+    fCafTree->Branch("reco_track_end_y", &data.reco_track_end_y);
+    fCafTree->Branch("reco_track_end_z", &data.reco_track_end_z);
+    fCafTree->Branch("reco_pdg", &data.reco_pdg);
+    fCafTree->Branch("reco_ixn_index", &data.reco_ixn_index);
+    fCafTree->Branch("reco_enu_calo", &data.reco_enu_calo);
 
-    fCafTree->Branch("true_energy", &true_energy);
-    fCafTree->Branch("true_p_x", &true_p_x);
-    fCafTree->Branch("true_p_y", &true_p_y);
-    fCafTree->Branch("true_p_z", &true_p_z);
-    fCafTree->Branch("true_p_mag", &true_p_mag);
-    fCafTree->Branch("true_length", &true_length);
-    fCafTree->Branch("true_angle", &true_angle);
-    fCafTree->Branch("true_angle_rot", &true_angle_rot);
-    fCafTree->Branch("true_angle_incl", &true_angle_incl);
-    fCafTree->Branch("true_angle_x", &true_angle_x);
-    fCafTree->Branch("true_angle_y", &true_angle_y);
-    fCafTree->Branch("true_angle_z", &true_angle_z);
-    fCafTree->Branch("true_vtx_x", &true_vtx_x);
-    fCafTree->Branch("true_vtx_y", &true_vtx_y);
-    fCafTree->Branch("true_vtx_z", &true_vtx_z);
-    fCafTree->Branch("true_track_start_x", &true_track_start_x);
-    fCafTree->Branch("true_track_start_y", &true_track_start_y);
-    fCafTree->Branch("true_track_start_z", &true_track_start_z);
-    fCafTree->Branch("true_track_end_x", &true_track_end_x);
-    fCafTree->Branch("true_track_end_y", &true_track_end_y);
-    fCafTree->Branch("true_track_end_z", &true_track_end_z);
-    fCafTree->Branch("true_pdg", &true_pdg);
-    fCafTree->Branch("true_nproton", &true_nproton);
-    fCafTree->Branch("true_ixn_index", &true_ixn_index);
-    fCafTree->Branch("mode", &mode);
-    fCafTree->Branch("nu_momentum_x", &nu_momentum_x);
-    fCafTree->Branch("nu_momentum_y", &nu_momentum_y);
-    fCafTree->Branch("nu_momentum_z", &nu_momentum_z);
-    
-    fCafTree->Branch("minerva_track_E", &minerva_track_E);
-    fCafTree->Branch("minerva_track_dir_x", &minerva_track_dir_x);
-    fCafTree->Branch("minerva_track_dir_y", &minerva_track_dir_y);
-    fCafTree->Branch("minerva_track_dir_z", &minerva_track_dir_z);
-    fCafTree->Branch("minerva_track_enddir_x", &minerva_track_enddir_x);
-    fCafTree->Branch("minerva_track_enddir_y", &minerva_track_enddir_y);
-    fCafTree->Branch("minerva_track_enddir_z", &minerva_track_enddir_z);
-    fCafTree->Branch("minerva_track_start_x", &minerva_track_start_x);
-    fCafTree->Branch("minerva_track_start_y", &minerva_track_start_y);
-    fCafTree->Branch("minerva_track_start_z", &minerva_track_start_z);
-    fCafTree->Branch("minerva_track_end_x", &minerva_track_end_x);
-    fCafTree->Branch("minerva_track_end_y", &minerva_track_end_y);
-    fCafTree->Branch("minerva_track_end_z", &minerva_track_end_z);
-    fCafTree->Branch("minerva_track_len_cm", &minerva_track_len_cm);
+    fCafTree->Branch("true_energy", &data.true_energy);
+    fCafTree->Branch("true_p_x", &data.true_p_x);
+    fCafTree->Branch("true_p_y", &data.true_p_y);
+    fCafTree->Branch("true_p_z", &data.true_p_z);
+    fCafTree->Branch("true_p_mag", &data.true_p_mag);
+    fCafTree->Branch("true_length", &data.true_length);
+    fCafTree->Branch("true_angle", &data.true_angle);
+    fCafTree->Branch("true_angle_rot", &data.true_angle_rot);
+    fCafTree->Branch("true_angle_incl", &data.true_angle_incl);
+    fCafTree->Branch("true_angle_x", &data.true_angle_x);
+    fCafTree->Branch("true_angle_y", &data.true_angle_y);
+    fCafTree->Branch("true_angle_z", &data.true_angle_z);
+    fCafTree->Branch("true_vtx_x", &data.true_vtx_x);
+    fCafTree->Branch("true_vtx_y", &data.true_vtx_y);
+    fCafTree->Branch("true_vtx_z", &data.true_vtx_z);
+    fCafTree->Branch("true_track_start_x", &data.true_track_start_x);
+    fCafTree->Branch("true_track_start_y", &data.true_track_start_y);
+    fCafTree->Branch("true_track_start_z", &data.true_track_start_z);
+    fCafTree->Branch("true_track_end_x", &data.true_track_end_x);
+    fCafTree->Branch("true_track_end_y", &data.true_track_end_y);
+    fCafTree->Branch("true_track_end_z", &data.true_track_end_z);
+    fCafTree->Branch("true_pdg", &data.true_pdg);
+    fCafTree->Branch("true_nproton", &data.true_nproton);
+    fCafTree->Branch("true_nmuon", &data.true_nmuon);
+    fCafTree->Branch("true_npion", &data.true_npion);
+    fCafTree->Branch("true_ixn_index", &data.true_ixn_index);
+    fCafTree->Branch("mode", &data.mode);
+    fCafTree->Branch("nu_momentum_x", &data.nu_momentum_x);
+    fCafTree->Branch("nu_momentum_y", &data.nu_momentum_y);
+    fCafTree->Branch("nu_momentum_z", &data.nu_momentum_z);
 
-    fCafTree->Branch("num_events_total", &num_events_total);
-    fCafTree->Branch("overlap", &overlap);
-    fCafTree->Branch("spill_index", &spill_index);
-    fCafTree->Branch("file_index", &file_index);
-    fCafTree->Branch("genie_index", &genie_index);
-    fCafTree->Branch("event", &event);
-    fCafTree->Branch("run", &run);
-    fCafTree->Branch("subrun", &subrun);
-    fCafTree->Branch("caf_file_name", &caf_file_name);
+    fCafTree->Branch("minerva_track_E", &data.minerva_track_E);
+    fCafTree->Branch("minerva_track_dir_x", &data.minerva_track_dir_x);
+    fCafTree->Branch("minerva_track_dir_y", &data.minerva_track_dir_y);
+    fCafTree->Branch("minerva_track_dir_z", &data.minerva_track_dir_z);
+    fCafTree->Branch("minerva_track_enddir_x", &data.minerva_track_enddir_x);
+    fCafTree->Branch("minerva_track_enddir_y", &data.minerva_track_enddir_y);
+    fCafTree->Branch("minerva_track_enddir_z", &data.minerva_track_enddir_z);
+    fCafTree->Branch("minerva_track_start_x", &data.minerva_track_start_x);
+    fCafTree->Branch("minerva_track_start_y", &data.minerva_track_start_y);
+    fCafTree->Branch("minerva_track_start_z", &data.minerva_track_start_z);
+    fCafTree->Branch("minerva_track_end_x", &data.minerva_track_end_x);
+    fCafTree->Branch("minerva_track_end_y", &data.minerva_track_end_y);
+    fCafTree->Branch("minerva_track_end_z", &data.minerva_track_end_z);
+    fCafTree->Branch("minerva_track_len_cm", &data.minerva_track_len_cm);
 
-    // Systematics TTree
-    TTree *fSystTree=new TTree("SystTree", "Systematics variables");
-    fSystTree->Branch("genie_weights", &genie_weights);
-    fSystTree->Branch("genie_idx", &genie_idx);
+    fCafTree->Branch("genie_weights", &data.genie_weights);
+
+    fCafTree->Branch("events_count", &data.events_count);
+    fCafTree->Branch("spill_index", &data.spill_index);
+    fCafTree->Branch("file_index", &data.file_index);
+    fCafTree->Branch("genie_index", &data.genie_index);
+    fCafTree->Branch("event", &data.event);
+    fCafTree->Branch("run", &data.run);
+    fCafTree->Branch("subrun", &data.subrun);
 
     // Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
@@ -321,15 +299,31 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     double minTrkLength = 3;
 
+    int num_events = 0;
+
     // Loop through files
     const auto t_start{std::chrono::steady_clock::now()};
     for(unsigned long file_num = 0; file_num < 1000; ++file_num)
     {
-        std::string file_path = "global/cfs/cdirs/dune/www/data/2x2/simulation/productions";
+        std::string file_path = "/global/cfs/cdirs/dune/www/data/2x2/simulation/productions";
 
         // Open file and attach SRProxy Object
-        TFile* caf_file = new TFile(Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num), "READ");
+        TFile* caf_file = TFile::Open(Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num), "READ");
+        
+        if(!caf_file || caf_file->IsZombie())
+        {
+            std::cerr << "Error opening CAF file: " << Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num) << std::endl;
+            continue;
+        }
+        
         TTree* caf_tree = (TTree*)caf_file->Get("cafTree");
+
+        if(!caf_tree)
+        {
+            std::cerr << "Error: cafTree not found in file: " << Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num) << std::endl;
+            continue;
+        }
+
         std::string tree_name = is_flat ? "rec" : "";
         auto sr = new caf::SRProxy(caf_tree, tree_name);
 
@@ -358,7 +352,10 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             // Loop over each reco interaction
             for(unsigned long ixn = 0; ixn < num_ixn; ++ixn)
             {
-                num_events++;
+                // Reset data for each interaction
+                // This gives me a fresh set of vectors for each interaction
+                // I don't have to worry about clearing them at the end of the loop
+                data = InteractionData{};
                 
                 bool reco_passes = false;
                 bool truth_passes = false;
@@ -396,14 +393,15 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 const auto truth_idx = vec_truth_ixn.at(max_overlap);
                 const auto& truth_ixn = sr->mc.nu[truth_idx];
 
+                // Genie systematic weights for this truth interaction
+                const int genie_idx = truth_ixn.genieIdx;
+                genie_rw_tree->GetEntry(genie_idx);
+                data.genie_weights.assign(totWeight, totWeight + 100);
+                data.genie_index = genie_idx;
+
                 // If vertex is not contained or target is not argon, skip interaction
                 if(contained(vtx.x, vtx.y, vtx.z) == false || truth_ixn.targetPDG != 1000180400)
                     continue;
-
-                // Pull the weight values
-                int thisGenieIdx = truth_ixn.genieIdx;
-                genie_rw_tree->GetEntry(thisGenieIdx);
-                std::vector<double> thisGenieWeights(totWeight, totWeight + 100);
 
                 // Count number of relevant (reco) particles
                 auto reco_nproton = 0;
@@ -449,8 +447,11 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 truth_passes = truth_cuts(truth_nproton, truth_nmuon, truth_npion);
 
                 // If interaction is not CC2p1mu0pi (reco or truth), go to next interaction      
-                if((reco_passes == false) & (truth_passes == false))
+                if(!reco_passes && !truth_passes)
                     continue;
+
+                // Interaction passes, now count it as an event
+                num_events++;
 
                 // Loop over particles in reco interaction
                 // Now to save information
@@ -587,114 +588,113 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                     // Population information in vectors for tracks that have passed all cuts
                     // Reco
-                    reco_energy.push_back(part.E);
-                    reco_p_x.push_back(part.p.x);
-                    reco_p_y.push_back(part.p.y);
-                    reco_p_z.push_back(part.p.z);
-                    reco_p_mag.push_back(pvec.Mag());
-                    reco_length.push_back(length);
+                    data.reco_energy.push_back(part.E);
+                    data.reco_p_x.push_back(part.p.x);
+                    data.reco_p_y.push_back(part.p.y);
+                    data.reco_p_z.push_back(part.p.z);
+                    data.reco_p_mag.push_back(pvec.Mag());
+                    data.reco_length.push_back(length);
                     dir.RotateY(TMath::Pi()/2);
-                    reco_angle.push_back(dir.Angle(beam_dir));
-                    reco_angle_x.push_back(dir.Angle(x_plus_dir));
-                    reco_angle_y.push_back(dir.Angle(y_plus_dir));
-                    reco_angle_z.push_back(dir.Angle(z_plus_dir));
+                    data.reco_angle.push_back(dir.Angle(beam_dir));
+                    data.reco_angle_x.push_back(dir.Angle(x_plus_dir));
+                    data.reco_angle_y.push_back(dir.Angle(y_plus_dir));
+                    data.reco_angle_z.push_back(dir.Angle(z_plus_dir));
                     dir.RotateY(-TMath::Pi()/2);
-                    reco_angle_rot.push_back(dir.Theta());
-                    reco_angle_incl.push_back(dir.Phi());
-                    reco_vtx_x.push_back(sr->common.ixn.dlp[ixn].vtx.x);
-                    reco_vtx_y.push_back(sr->common.ixn.dlp[ixn].vtx.y);
-                    reco_vtx_z.push_back(sr->common.ixn.dlp[ixn].vtx.z);
-                    reco_track_start_x.push_back(part.start.x);
-                    reco_track_start_y.push_back(part.start.y);
-                    reco_track_start_z.push_back(part.start.z);
-                    reco_track_end_x.push_back(part.end.x);
-                    reco_track_end_y.push_back(part.end.y);
-                    reco_track_end_z.push_back(part.end.z);
-                    reco_pdg.push_back(part.pdg);
-                    reco_enu_calo.push_back(sr->common.ixn.dlp[ixn].Enu.calo);
+                    data.reco_angle_rot.push_back(dir.Theta());
+                    data.reco_angle_incl.push_back(dir.Phi());
+                    data.reco_vtx_x = (sr->common.ixn.dlp[ixn].vtx.x);
+                    data.reco_vtx_y = (sr->common.ixn.dlp[ixn].vtx.y);
+                    data.reco_vtx_z = (sr->common.ixn.dlp[ixn].vtx.z);
+                    data.reco_track_start_x.push_back(part.start.x);
+                    data.reco_track_start_y.push_back(part.start.y);
+                    data.reco_track_start_z.push_back(part.start.z);
+                    data.reco_track_end_x.push_back(part.end.x);
+                    data.reco_track_end_y.push_back(part.end.y);
+                    data.reco_track_end_z.push_back(part.end.z);
+                    data.reco_pdg.push_back(part.pdg);
+                    data.reco_enu_calo.push_back(sr->common.ixn.dlp[ixn].Enu.calo);
                     // Truth
-                    true_energy.push_back(truth_match->p.E);
-                    true_p_x.push_back(truth_match->p.px); 
-                    true_p_y.push_back(truth_match->p.py); 
-                    true_p_z.push_back(truth_match->p.pz);
-                    true_p_mag.push_back(true_pvec.Mag());
-                    true_length.push_back(true_length_val);
+                    data.true_energy.push_back(truth_match->p.E);
+                    data.true_p_x.push_back(truth_match->p.px); 
+                    data.true_p_y.push_back(truth_match->p.py); 
+                    data.true_p_z.push_back(truth_match->p.pz);
+                    data.true_p_mag.push_back(true_pvec.Mag());
+                    data.true_length.push_back(true_length_val);
                     true_dir.RotateY(TMath::Pi()/2);
-                    true_angle.push_back(true_dir.Angle(beam_dir));
-                    true_angle_x.push_back(true_dir.Angle(x_plus_dir));
-                    true_angle_y.push_back(true_dir.Angle(y_plus_dir));
-                    true_angle_z.push_back(true_dir.Angle(z_plus_dir));
+                    data.true_angle.push_back(true_dir.Angle(beam_dir));
+                    data.true_angle_x.push_back(true_dir.Angle(x_plus_dir));
+                    data.true_angle_y.push_back(true_dir.Angle(y_plus_dir));
+                    data.true_angle_z.push_back(true_dir.Angle(z_plus_dir));
                     true_dir.RotateY(-TMath::Pi()/2);
-                    true_angle_rot.push_back(true_dir.Theta());
-                    true_angle_incl.push_back(true_dir.Phi());
-                    true_vtx_x.push_back(sr->mc.nu[truth_id.ixn].vtx.x);
-                    true_vtx_y.push_back(sr->mc.nu[truth_id.ixn].vtx.y);
-                    true_vtx_z.push_back(sr->mc.nu[truth_id.ixn].vtx.z);
-                    true_track_start_x.push_back(truth_match->start_pos.x);
-                    true_track_start_y.push_back(truth_match->start_pos.y);
-                    true_track_start_z.push_back(truth_match->start_pos.z);
-                    true_track_end_x.push_back(truth_match->end_pos.x);
-                    true_track_end_y.push_back(truth_match->end_pos.y);
-                    true_track_end_z.push_back(truth_match->end_pos.z);
-                    true_pdg.push_back(truth_match->pdg);
-                    true_nproton.push_back(sr->mc.nu[truth_id.ixn].nproton); //rec.mc.nu.nproton
-                    mode.push_back(sr->mc.nu[truth_id.ixn].mode); //rec.mc.nu.mode
-                    nu_momentum_x.push_back(sr->mc.nu[truth_id.ixn].momentum.x);
-                    nu_momentum_y.push_back(sr->mc.nu[truth_id.ixn].momentum.y);
-                    nu_momentum_z.push_back(sr->mc.nu[truth_id.ixn].momentum.z);
+                    data.true_angle_rot.push_back(true_dir.Theta());
+                    data.true_angle_incl.push_back(true_dir.Phi());
+                    data.true_vtx_x = (sr->mc.nu[truth_id.ixn].vtx.x);
+                    data.true_vtx_y = (sr->mc.nu[truth_id.ixn].vtx.y);
+                    data.true_vtx_z = (sr->mc.nu[truth_id.ixn].vtx.z);
+                    data.true_track_start_x.push_back(truth_match->start_pos.x);
+                    data.true_track_start_y.push_back(truth_match->start_pos.y);
+                    data.true_track_start_z.push_back(truth_match->start_pos.z);
+                    data.true_track_end_x.push_back(truth_match->end_pos.x);
+                    data.true_track_end_y.push_back(truth_match->end_pos.y);
+                    data.true_track_end_z.push_back(truth_match->end_pos.z);
+                    data.true_pdg = (sr->mc.nu[truth_id.ixn].pdg);
+                    data.true_nproton = (truth_nproton); //rec.mc.nu.nproton
+                    data.true_nmuon = (truth_nmuon); //rec.mc.nu.nmuon
+                    data.true_npion = (truth_npion); //rec.mc.nu.npion
+                    data.mode = (sr->mc.nu[truth_id.ixn].mode); //rec.mc.nu.mode
+                    data.nu_momentum_x = (sr->mc.nu[truth_id.ixn].momentum.x);
+                    data.nu_momentum_y = (sr->mc.nu[truth_id.ixn].momentum.y);
+                    data.nu_momentum_z = (sr->mc.nu[truth_id.ixn].momentum.z);
 
                     // Minerva
                     if (minerva_track == true)
                     {
-                        minerva_track_E.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].E);
-                        minerva_track_dir_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.x);
-                        minerva_track_dir_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.y);
-                        minerva_track_dir_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.z);
-                        minerva_track_enddir_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.x);
-                        minerva_track_enddir_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.y);
-                        minerva_track_enddir_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.z);
-                        minerva_track_start_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.x);
-                        minerva_track_start_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.y);
-                        minerva_track_start_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.z);
-                        minerva_track_end_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.x);
-                        minerva_track_end_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.y);
-                        minerva_track_end_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.z);
-                        minerva_track_len_cm.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].len_cm);
+                        data.minerva_track_E.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].E);
+                        data.minerva_track_dir_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.x);
+                        data.minerva_track_dir_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.y);
+                        data.minerva_track_dir_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.z);
+                        data.minerva_track_enddir_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.x);
+                        data.minerva_track_enddir_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.y);
+                        data.minerva_track_enddir_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].enddir.z);
+                        data.minerva_track_start_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.x);
+                        data.minerva_track_start_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.y);
+                        data.minerva_track_start_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].start.z);
+                        data.minerva_track_end_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.x);
+                        data.minerva_track_end_y.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.y);
+                        data.minerva_track_end_z.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].end.z);
+                        data.minerva_track_len_cm.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].len_cm);
                     }
                     else
                     {
-                        minerva_track_E.push_back(-999);
-                        minerva_track_dir_x.push_back(-999);
-                        minerva_track_dir_y.push_back(-999);
-                        minerva_track_dir_z.push_back(-999);
-                        minerva_track_enddir_x.push_back(-999);
-                        minerva_track_enddir_y.push_back(-999);
-                        minerva_track_enddir_z.push_back(-999);
-                        minerva_track_start_x.push_back(-999);
-                        minerva_track_start_y.push_back(-999);
-                        minerva_track_start_z.push_back(-999);
-                        minerva_track_end_x.push_back(-999);
-                        minerva_track_end_y.push_back(-999);
-                        minerva_track_end_z.push_back(-999);
-                        minerva_track_len_cm.push_back(-999);
+                        data.minerva_track_E.push_back(-999);
+                        data.minerva_track_dir_x.push_back(-999);
+                        data.minerva_track_dir_y.push_back(-999);
+                        data.minerva_track_dir_z.push_back(-999);
+                        data.minerva_track_enddir_x.push_back(-999);
+                        data.minerva_track_enddir_y.push_back(-999);
+                        data.minerva_track_enddir_z.push_back(-999);
+                        data.minerva_track_start_x.push_back(-999);
+                        data.minerva_track_start_y.push_back(-999);
+                        data.minerva_track_start_z.push_back(-999);
+                        data.minerva_track_end_x.push_back(-999);
+                        data.minerva_track_end_y.push_back(-999);
+                        data.minerva_track_end_z.push_back(-999);
+                        data.minerva_track_len_cm.push_back(-999);
                     }
                     // Other
-                    num_events_total.push_back(num_events);
-
-                    overlap.push_back(current_max);
-                    true_ixn_index.push_back(truth_idx);
-                    reco_ixn_index.push_back(ixn);
-                    spill_index.push_back(spill_num);
-                    file_index.push_back(file_num);
-                    event.push_back(sr->meta.nd_lar.event);
-                    run.push_back(sr->meta.nd_lar.run);
-                    subrun.push_back(sr->meta.nd_lar.subrun);
-                    caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
-
-                    genie_weights.push_back(thisGenieWeights);
-                    genie_idx.push_back(thisGenieIdx);
+                    data.events_count = num_events;
+                    data.true_ixn_index = truth_idx;
+                    data.reco_ixn_index = ixn;
+                    data.spill_index = spill_num;
+                    data.file_index = file_num;
+                    data.event = sr->meta.nd_lar.event;
+                    data.run = sr->meta.nd_lar.run;
+                    data.subrun = sr->meta.nd_lar.subrun;
 
                 } // End of particle loop
+
+                // Fill at the end of every interaction. One entry = One interaction
+                fCafTree->Fill();
 
             } // End of interaction loop
         
@@ -707,11 +707,8 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
-    // POPULATE: Fille and write to output ROOT file
-    fCafTree->Fill();
-    fSystTree->Fill();
+    // POPULATE: Write to output ROOT file
     fCafTree->Write();
-    fSystTree->Write();
         
     std::cout << "Wrote TTree." << std::endl;
 
@@ -723,11 +720,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     return 0;
 }
 
-int main(int argc, char** argv)
+int main()
 {
-    std::string input_file_list = argv[1];
-
-    caf_plotter(input_file_list, true);
+    caf_plotter(true);
 
     return 0;
 }
