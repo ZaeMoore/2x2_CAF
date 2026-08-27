@@ -130,6 +130,12 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     int num_events = 0;
 
+    // Create output file
+    std::string file_name = "multip_analysis_m6.5";
+
+    // DEFINE: Output TFile
+    TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
+
     // DEFINE: Vectors to hold information to keep in output ROOT TTree file
     std::vector< double >  reco_energy;
     std::vector< double >  reco_p_x; 
@@ -205,11 +211,16 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     std::vector< double >  reco_ixn_index;
     std::vector< int >     spill_index;
     std::vector< int >     file_index;
+    std::vector< int >     genie_index;
     std::vector< int >     event;
     std::vector< int >     run;
     std::vector< int >     subrun;
     std::vector<std::string> caf_file_name;
 
+    // systematics
+    // SystWeights tree should have both, caf tree should have just the genie_idx to make sure events match
+    std::vector< std::vector<double> > genie_weights;   // 100 weights per saved particle row
+    std::vector< int > genie_idx;                       // for cross-checking
 
     // DEFINE: TTree and TBranches to go in output ROOT file
     TTree *fCafTree=new TTree("CafTree", "Caf reco and truth variables");
@@ -283,14 +294,19 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     fCafTree->Branch("minerva_track_len_cm", &minerva_track_len_cm);
 
     fCafTree->Branch("num_events_total", &num_events_total);
-
     fCafTree->Branch("overlap", &overlap);
     fCafTree->Branch("spill_index", &spill_index);
     fCafTree->Branch("file_index", &file_index);
+    fCafTree->Branch("genie_index", &genie_index);
     fCafTree->Branch("event", &event);
     fCafTree->Branch("run", &run);
     fCafTree->Branch("subrun", &subrun);
     fCafTree->Branch("caf_file_name", &caf_file_name);
+
+    // Systematics TTree
+    TTree *fSystTree=new TTree("SystTree", "Systematics variables");
+    fSystTree->Branch("genie_weights", &genie_weights);
+    fSystTree->Branch("genie_idx", &genie_idx);
 
     // Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
@@ -319,6 +335,15 @@ int caf_plotter(std::string file_list, bool is_flat = true)
         TTree* caf_tree = (TTree*)caf_file->Get("cafTree");
         std::string tree_name = is_flat ? "rec" : "";
         auto sr = new caf::SRProxy(caf_tree, tree_name);
+
+        // Open systematics files. There are 999 CAF files and 999 systematics files
+        // global/cfs/cdirs/dune/www/data/2x2/simulation/productions/systematics/nusystematics/MiniRun6.5.nusyst/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root
+        // Open the companion GENIE systematics file per input CAF file
+        std::string syst_file_path = "/global/cfs/cdirs/dune/www/data/2x2/simulation/productions/systematics/nusystematics/MiniRun6.5.nusyst";
+        TFile* genie_rw_file = new TFile(Form(syst_file_path + "/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root", file_num - 1));
+        TTree* genie_rw_tree = (TTree*)genie_rw_file->Get("SystWeights");
+        Double_t totWeight[100];
+        genie_rw_tree->SetBranchAddress("totWeight", totWeight);
 
         // Loop over each spill
         const unsigned long nspills = caf_tree->GetEntries();
@@ -380,6 +405,11 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                 // If vertex is not contained or target is not argon, skip interaction
                 if(contained(vtx.x, vtx.y, vtx.z) == false || truth_ixn.targetPDG != 1000180400)
                     continue;
+
+                // Pull the weight values
+                int thisGenieIdx = truth_ixn.genieIdx;
+                genie_rw_tree->GetEntry(thisGenieIdx);
+                std::vector<double> thisGenieWeights(totWeight, totWeight + 100);
 
                 // Count number of relevant (reco) particles
                 auto reco_nproton = 0;
@@ -667,8 +697,14 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     subrun.push_back(sr->meta.nd_lar.subrun);
                     caf_file_name.push_back(current_file.erase(0, current_file.find_last_of("/")+1).c_str());
 
+                    genie_weights.push_back(thisGenieWeights);
+                    genie_idx.push_back(thisGenieIdx);
+
                 } // End of particle loop
 
+                // Fill TTrees
+                fCafTree->Fill();
+                fSystTree->Fill();
             } // End of interaction loop
         
         } // End of spill loop
@@ -678,20 +714,11 @@ int caf_plotter(std::string file_list, bool is_flat = true)
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
-    // Plotting code goes here (if desired)
-
-
-    // Output TTree file name
-    std::string file_name = "2p2h_purity_eff_m6.5_1.2";
-
-    // DEFINE: Output TFile
-    TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
-
-    // POPULATE: Fill TTree and write to output ROOT file
-    fCafTree->Fill();
+    // POPULATE: Write to output ROOT file
     fCafTree->Write();
+    fSystTree->Write();
         
-    std::cout << "Filled and wrote TTree." << std::endl;
+    std::cout << "Wrote TTree." << std::endl;
 
     // CLOSE: Output ROOT file
     f->Close();
