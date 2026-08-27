@@ -321,26 +321,20 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
     double minTrkLength = 3;
 
-    // Loop through files in list
+    // Loop through files
     const auto t_start{std::chrono::steady_clock::now()};
-    auto file_num = 0;
-    for(const auto& f : root_list)
+    for(unsigned long file_num = 0; file_num < 1000; ++file_num)
     {
-        std::string current_file = f;
-        std::cout << "Processing " << f << std::endl;
-        file_num++;
+        std::string file_path = "global/cfs/cdirs/dune/www/data/2x2/simulation/productions";
 
         // Open file and attach SRProxy Object
-        TFile* caf_file = TFile::Open(f.c_str(), "READ");
+        TFile* caf_file = new TFile(Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num), "READ");
         TTree* caf_tree = (TTree*)caf_file->Get("cafTree");
         std::string tree_name = is_flat ? "rec" : "";
         auto sr = new caf::SRProxy(caf_tree, tree_name);
 
-        // Open systematics files. There are 999 CAF files and 999 systematics files
-        // global/cfs/cdirs/dune/www/data/2x2/simulation/productions/systematics/nusystematics/MiniRun6.5.nusyst/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root
-        // Open the companion GENIE systematics file per input CAF file
-        std::string syst_file_path = "/global/cfs/cdirs/dune/www/data/2x2/simulation/productions/systematics/nusystematics/MiniRun6.5.nusyst";
-        TFile* genie_rw_file = new TFile(Form(syst_file_path + "/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root", file_num - 1));
+        // Open the companion GENIE systematics file
+        TFile* genie_rw_file = TFile::Open(Form(file_path + "/systematics/nusystematics/MiniRun6.5.nusyst/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root", file_num), "READ");
         TTree* genie_rw_tree = (TTree*)genie_rw_file->Get("SystWeights");
         Double_t totWeight[100];
         genie_rw_tree->SetBranchAddress("totWeight", totWeight);
@@ -445,7 +439,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     if(part.pdg == 2212) 
                         truth_nproton++;
 
-                    if(part.pdg == 13 and part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
+                    if(part.pdg == 13 || part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
                         truth_nmuon++;
 
                     if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
@@ -507,7 +501,7 @@ int caf_plotter(std::string file_list, bool is_flat = true)
                     // Get Minerva match
                     bool minerva_track = false;
                     // Loop over primary tracks
-                    if ((abs(pdg == 2212) || abs(pdg) == 13 || abs(pdg) == 211 || 
+                    if ((abs(pdg) == 2212 || abs(pdg) == 13 || abs(pdg) == 211 || 
                         abs(pdg) == 111 || abs(pdg) == 321))
                     {
                         const auto& start_pos = part.start;
@@ -702,19 +696,20 @@ int caf_plotter(std::string file_list, bool is_flat = true)
 
                 } // End of particle loop
 
-                // Fill TTrees
-                fCafTree->Fill();
-                fSystTree->Fill();
             } // End of interaction loop
         
         } // End of spill loop
         caf_file->Close();
+        genie_rw_file->Close();
+        delete sr;
     } // End of file loop
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
-    // POPULATE: Write to output ROOT file
+    // POPULATE: Fille and write to output ROOT file
+    fCafTree->Fill();
+    fSystTree->Fill();
     fCafTree->Write();
     fSystTree->Write();
         
