@@ -3,11 +3,13 @@ Analysis of MiniRun CAF files
 
 Zae Moore
 
-To be run on DUNE GPVMs
-This needs to be adapted to run on NERSC in order to use the systematics files Richie has there
-Will have to remake the .list file
+Can be run on DUNE GPVMs or NERSC
+On NERSC:
+Run the alias cafshifter, then source setup.sh, then source compile.sh
+Then run using command ./minirun_analysis
+Compiled script cannot be run without being in the cafshifter and sourcing setup.sh first
 
-Input: A .list file contained the paths to every CAF file
+Input: None
 
 Output: A ROOT file with information on all events that pass the
 reco and/or truth level cuts
@@ -187,6 +189,13 @@ struct InteractionData
 
     // Systematics
     std::vector<double> genie_weights;   // 100 weights per saved interaction
+    std::vector<double> NormCCMEC; // Normalization weight for CC MEC events
+    std::vector<double> MaCCRES;
+    std::vector<double> MvCCRES;
+    std::vector<double> CCResVariationResponse;
+    std::vector<double> FSIReweight_hN;
+    std::vector<double> FSIReweight_INCL;
+    std::vector<double> FSIReweight_G4BC;
 };
 
 /*
@@ -194,6 +203,8 @@ Main function to loop through CAF files
 */
 int caf_plotter(bool is_flat = true)
 {
+    gErrorIgnoreLevel = kError; 
+    
     // Create output file
     std::string file_name = "multip_analysis_m6.5";
 
@@ -277,6 +288,13 @@ int caf_plotter(bool is_flat = true)
     fCafTree->Branch("minerva_track_len_cm", &data.minerva_track_len_cm);
 
     fCafTree->Branch("genie_weights", &data.genie_weights);
+    fCafTree->Branch("NormCCMEC", &data.NormCCMEC);
+    fCafTree->Branch("MaCCRES", &data.MaCCRES);
+    fCafTree->Branch("MvCCRES", &data.MvCCRES);
+    fCafTree->Branch("CCResVariationResponse", &data.CCResVariationResponse);
+    fCafTree->Branch("FSIReweight_hN", &data.FSIReweight_hN);
+    fCafTree->Branch("FSIReweight_INCL", &data.FSIReweight_INCL);
+    fCafTree->Branch("FSIReweight_G4BC", &data.FSIReweight_G4BC);
 
     fCafTree->Branch("events_count", &data.events_count);
     fCafTree->Branch("spill_index", &data.spill_index);
@@ -305,14 +323,19 @@ int caf_plotter(bool is_flat = true)
     const auto t_start{std::chrono::steady_clock::now()};
     for(unsigned long file_num = 0; file_num < 1000; ++file_num)
     {
+        std::cout << "Processing file_num " << file_num << " / 1000" << std::endl;
+
         std::string file_path = "/global/cfs/cdirs/dune/www/data/2x2/simulation/productions";
 
+        std::string caf_path = file_path + "/MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/" +
+            Form("MiniRun6.5_1E19_RHC.caf.%07lu.CAF.flat.root", file_num);
+
         // Open file and attach SRProxy Object
-        TFile* caf_file = TFile::Open(Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num), "READ");
+        TFile* caf_file = TFile::Open(caf_path.c_str(), "READ");
         
         if(!caf_file || caf_file->IsZombie())
         {
-            std::cerr << "Error opening CAF file: " << Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num) << std::endl;
+            std::cerr << "Error opening CAF file: " << caf_path << std::endl;
             continue;
         }
         
@@ -320,7 +343,7 @@ int caf_plotter(bool is_flat = true)
 
         if(!caf_tree)
         {
-            std::cerr << "Error: cafTree not found in file: " << Form(file_path + "MiniRun6.5_1E19_RHC/MiniRun6.5_1E19_RHC.caf/CAF.flat/0000000/MiniRun6.5_1E19_RHC.caf.%07d.CAF.flat.root", file_num) << std::endl;
+            std::cerr << "Error: cafTree not found in file: " << caf_path << std::endl;
             continue;
         }
 
@@ -328,15 +351,29 @@ int caf_plotter(bool is_flat = true)
         auto sr = new caf::SRProxy(caf_tree, tree_name);
 
         // Open the companion GENIE systematics file
-        TFile* genie_rw_file = TFile::Open(Form(file_path + "/systematics/nusystematics/MiniRun6.5.nusyst/MiniRun6.5_1E19_RHC.nuweights.%07d.nusyst.root", file_num), "READ");
+        std::string genie_path = file_path + "/systematics/nusystematics/MiniRun6.5.nusyst/" +
+            Form("MiniRun6.5_1E19_RHC.nuweights.%07lu.nusyst.root", file_num);
+
+        TFile* genie_rw_file = TFile::Open(genie_path.c_str(), "READ");
         TTree* genie_rw_tree = (TTree*)genie_rw_file->Get("SystWeights");
         Double_t totWeight[100];
+        Double_t MaCCRES[100];
+        Double_t MvCCRES[100];
+        Double_t CCResVariationResponse[100];
+        Double_t FSIReweight_hN[100];
+        Double_t FSIReweight_INCL[100];
+        Double_t FSIReweight_G4BC[100];
         genie_rw_tree->SetBranchAddress("totWeight", totWeight);
+        genie_rw_tree->SetBranchAddress("MaCCRES", MaCCRES);
+        genie_rw_tree->SetBranchAddress("MvCCRES", MvCCRES);
+        genie_rw_tree->SetBranchAddress("CCResVariationResponse", CCResVariationResponse);
+        genie_rw_tree->SetBranchAddress("FSIReweight_hN", FSIReweight_hN);
+        genie_rw_tree->SetBranchAddress("FSIReweight_INCL", FSIReweight_INCL);
+        genie_rw_tree->SetBranchAddress("FSIReweight_G4BC", FSIReweight_G4BC);
 
         // Loop over each spill
         const unsigned long nspills = caf_tree->GetEntries();
         const unsigned int incr = nspills / 10;
-        std::cout << "Looping over " << nspills << " entries/spills..." << std::endl;
         for (unsigned long i = 0; i < nspills; ++i)
         {
             caf_tree->GetEntry(i);
@@ -397,6 +434,12 @@ int caf_plotter(bool is_flat = true)
                 const int genie_idx = truth_ixn.genieIdx;
                 genie_rw_tree->GetEntry(genie_idx);
                 data.genie_weights.assign(totWeight, totWeight + 100);
+                data.MaCCRES.assign(MaCCRES, MaCCRES + 100);
+                data.MvCCRES.assign(MvCCRES, MvCCRES + 100);
+                data.CCResVariationResponse.assign(CCResVariationResponse, CCResVariationResponse + 100);
+                data.FSIReweight_hN.assign(FSIReweight_hN, FSIReweight_hN + 100);
+                data.FSIReweight_INCL.assign(FSIReweight_INCL, FSIReweight_INCL + 100);
+                data.FSIReweight_G4BC.assign(FSIReweight_G4BC, FSIReweight_G4BC + 100);
                 data.genie_index = genie_idx;
 
                 // If vertex is not contained or target is not argon, skip interaction
@@ -637,7 +680,7 @@ int caf_plotter(bool is_flat = true)
                     data.true_track_end_x.push_back(truth_match->end_pos.x);
                     data.true_track_end_y.push_back(truth_match->end_pos.y);
                     data.true_track_end_z.push_back(truth_match->end_pos.z);
-                    data.true_pdg = (sr->mc.nu[truth_id.ixn].pdg);
+                    data.true_pdg.push_back(truth_match->pdg);
                     data.true_nproton = (truth_nproton); //rec.mc.nu.nproton
                     data.true_nmuon = (truth_nmuon); //rec.mc.nu.nmuon
                     data.true_npion = (truth_npion); //rec.mc.nu.npion
@@ -699,16 +742,20 @@ int caf_plotter(bool is_flat = true)
             } // End of interaction loop
         
         } // End of spill loop
+        f->cd();
+        fCafTree->AutoSave("Overwrite");
+
         caf_file->Close();
         genie_rw_file->Close();
         delete sr;
     } // End of file loop
+    
 
     const auto t_end{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> t_elapsed{t_end - t_start};
 
     // POPULATE: Write to output ROOT file
-    fCafTree->Write();
+    fCafTree->Write("", TObject::kOverwrite);
         
     std::cout << "Wrote TTree." << std::endl;
 
