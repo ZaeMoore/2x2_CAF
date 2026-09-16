@@ -357,6 +357,7 @@ int caf_plotter(bool is_flat = true)
         TFile* genie_rw_file = TFile::Open(genie_path.c_str(), "READ");
         TTree* genie_rw_tree = (TTree*)genie_rw_file->Get("SystWeights");
         Double_t totWeight[100];
+        Double_t NormCCMEC[100];
         Double_t MaCCRES[100];
         Double_t MvCCRES[100];
         Double_t CCResVariationResponse[100];
@@ -364,6 +365,7 @@ int caf_plotter(bool is_flat = true)
         Double_t FSIReweight_INCL[100];
         Double_t FSIReweight_G4BC[100];
         genie_rw_tree->SetBranchAddress("totWeight", totWeight);
+        genie_rw_tree->SetBranchAddress("NormCCMEC", NormCCMEC);
         genie_rw_tree->SetBranchAddress("MaCCRES", MaCCRES);
         genie_rw_tree->SetBranchAddress("MvCCRES", MvCCRES);
         genie_rw_tree->SetBranchAddress("CCResVariationResponse", CCResVariationResponse);
@@ -434,6 +436,7 @@ int caf_plotter(bool is_flat = true)
                 const int genie_idx = truth_ixn.genieIdx;
                 genie_rw_tree->GetEntry(genie_idx);
                 data.genie_weights.assign(totWeight, totWeight + 100);
+                data.NormCCMEC.assign(NormCCMEC, NormCCMEC + 100);
                 data.MaCCRES.assign(MaCCRES, MaCCRES + 100);
                 data.MvCCRES.assign(MvCCRES, MvCCRES + 100);
                 data.CCResVariationResponse.assign(CCResVariationResponse, CCResVariationResponse + 100);
@@ -441,7 +444,7 @@ int caf_plotter(bool is_flat = true)
                 data.FSIReweight_INCL.assign(FSIReweight_INCL, FSIReweight_INCL + 100);
                 data.FSIReweight_G4BC.assign(FSIReweight_G4BC, FSIReweight_G4BC + 100);
                 data.genie_index = genie_idx;
-
+    
                 // If vertex is not contained or target is not argon, skip interaction
                 if(contained(vtx.x, vtx.y, vtx.z) == false || truth_ixn.targetPDG != 1000180400)
                     continue;
