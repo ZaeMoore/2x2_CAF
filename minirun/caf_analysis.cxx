@@ -32,6 +32,7 @@ reco and/or truth level cuts
 #include <cmath>
 #include <math.h>
 #include "duneanaobj/StandardRecord/Proxy/SRProxy.h"
+#include "flux_cov.cxx" // Is this correct way?
 #define Dimension 3
 //#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_05_00/include/duneanaobj/StandardRecord/StandardRecord.h"
 //#include "/cvmfs/dune.opensciencegrid.org/products/dune/duneanaobj/v03_06_01b/include/duneanaobj/StandardRecord/Proxy/SRProxy.h"
