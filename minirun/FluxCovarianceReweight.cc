@@ -1,9 +1,4 @@
-/*
-Based on Richie Diurba's 2x2 track multiplicity studies flux covariance reweight file
-
-
-*/
-
+#include "FluxCovarianceReweight.h"
 
 #include "TFile.h"
 #include "TH2D.h"
@@ -46,6 +41,82 @@ bool FluxCovarianceReweight::LoadBinning(const char* binfile)
 // =====================================================
 // Load covariance matrix
 // =====================================================
+bool FluxCovarianceReweight::LoadCovariance()
+{
+
+    TFile* f = TFile::Open("numiFluxSyst.root", "READ");
+    if (!f || f->IsZombie()) return false;
+    TH2D* h=nullptr;
+    f->GetObject("hcov_hadProd_abs", h);
+    TH1D* hflux_fhc_nue=nullptr;
+    TH1D* hflux_fhc_nuebar=nullptr;
+    TH1D* hflux_fhc_numu=nullptr;
+    TH1D* hflux_fhc_numubar=nullptr;    
+    
+    TH1D* hflux_rhc_nue=nullptr;
+    TH1D* hflux_rhc_nuebar=nullptr;
+    TH1D* hflux_rhc_numu=nullptr;
+    TH1D* hflux_rhc_numubar=nullptr;
+    f->GetObject("hflux_fhc_nue_ppfx_corrected", hflux_fhc_nue);
+    f->GetObject("hflux_fhc_nuebar_ppfx_corrected", hflux_fhc_nuebar);
+    f->GetObject("hflux_fhc_numu_ppfx_corrected", hflux_fhc_numu);
+    f->GetObject("hflux_fhc_numubar_ppfx_corrected", hflux_fhc_numubar);
+
+    f->GetObject("hflux_rhc_nue_ppfx_corrected", hflux_rhc_nue);
+    f->GetObject("hflux_rhc_nuebar_ppfx_corrected", hflux_rhc_nuebar);
+    f->GetObject("hflux_rhc_numu_ppfx_corrected", hflux_rhc_numu);
+    f->GetObject("hflux_rhc_numubar_ppfx_corrected", hflux_rhc_numubar);
+
+    LoadBinning("flux_covariance_binning_NuMI_GeV.txt");
+
+    LoadFluxHistograms(
+      hflux_fhc_nue,
+      hflux_fhc_nuebar,
+      hflux_fhc_numu,
+      hflux_fhc_numubar,
+      hflux_rhc_nue,
+      hflux_rhc_nuebar,
+      hflux_rhc_numu,
+      hflux_rhc_numubar
+    );
+
+    if (!h) {
+        std::cerr << "ERROR: could not find hcov_total_abs\n";
+        return false;
+    }
+
+    const int n = h->GetNbinsX();
+    std::cout<<fBins.size()<<","<<n<<std::endl;
+    if ((int)fBins.size() != n) {
+        std::cerr << "ERROR: binning size does not match covariance\n";
+        return false;
+    }
+
+    if (fNominalFlux.GetNrows() != n) {
+        std::cerr << "ERROR: nominal flux not loaded before covariance\n";
+        return false;
+    }
+
+    fCov.ResizeTo(n, n);
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+
+            const double cov_abs = h->GetBinContent(i+1, j+1);
+
+            const double phi_i = fNominalFlux[i];
+            const double phi_j = fNominalFlux[j];
+
+            if (phi_i > 0.0 && phi_j > 0.0) {
+                fCov(i,j) = cov_abs / (phi_i * phi_j);
+            } else {
+                fCov(i,j) = 0.0;
+            }
+        }
+    }
+
+    return true;
+}
 bool FluxCovarianceReweight::LoadCombinedCovariance()
 {
     // Load hadron production covariance (FHC + RHC)
@@ -61,6 +132,8 @@ bool FluxCovarianceReweight::LoadCombinedCovariance()
         std::cerr << "ERROR: could not find hcov_total_abs\n";
         return false;
     }
+    
+
     
     TH2D* h_beamfocus = nullptr;
     f->GetObject("hcov_beamFocus_abs", h_beamfocus);
