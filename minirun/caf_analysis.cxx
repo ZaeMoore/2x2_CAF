@@ -52,66 +52,95 @@ float dot_product(std::vector<float> vector_a, std::vector<float> vector_b)
 
 /*
 Is the point vertex contained within the TPC fiducial volume? 
-Fiducial volume defined as 8 cm from each TPC wall
+Fiducial volume: each module's active region shrunk by `margin` cm on every side.
+Regions are {{xmin, ymin, zmin}, {xmax, ymax, zmax}}.
 */
-bool contained(std::vector<double> point)
+static const double kActiveRegions[4][2][3] = {
+    {{  3.069, -62.076,   2.4620001}, { 63.931, 62.076,  64.538   }},
+    {{  3.069, -62.076, -64.538    }, { 63.931, 62.076,  -2.4620001}},
+    {{-63.931, -62.076,   2.462    }, { -3.069, 62.076,  64.537994 }},
+    {{-63.931, -62.076, -64.538    }, { -3.069, 62.076,  -2.4620001}},
+};
+
+inline bool is_contained(std::vector<double> point, double margin = 5.0)
 {
     double x = point[0];
     double y = point[1];
     double z = point[2];
 
-    double tpc_dist = 5.0; // distance from the tpc walls for containment cuts
-    double xbound = 63.931;
-    double ybound = 62.076;
-    double zbound = 64.3163;
-
-    bool cont = abs(x) < xbound - tpc_dist &&
-                abs(x) > tpc_dist &&
-                abs(y) < ybound - tpc_dist &&
-                abs(z) > tpc_dist &&
-                abs(z) < zbound - tpc_dist;
-    return cont;
+    for (const auto& r : kActiveRegions)
+    {
+        if (r[0][0] + margin <= x && x <= r[1][0] - margin &&
+            r[0][1] + margin <= y && y <= r[1][1] - margin &&
+            r[0][2] + margin <= z && z <= r[1][2] - margin)
+            return true;
+    }
+    return false;
 }
 
 /*
 Truth level cuts
 Applied in line 420
 */
-bool truth_cuts(int nproton, int nmuon, int npion)
-{
-    if((nproton >= 2) && (nmuon == 1) && (npion == 0))
-    {
-        return true;
-    }
-    return false;
-}
-
-/*
-Reco level cuts 
-Applied in line 561
-Soft cuts so that we can examine effectiveness of cuts in analysis
-*/
-bool reco_cuts(std::vector<double> vtx,
+bool truth_cuts(std::vector<double> vtx,
                 std::vector<int> pdg,
-                std::vector<double> p,
-                std::vector<std::vector<double>> track_end,
-                double mu_minerva_track_end_z)
+                std::vector<bool> prim,
+                int max_other = 5)
 {
     int nproton = 0;
     int nmuon = 0;
     int npion = 0;
-    // track_end = {{x, y, z}, {x, y, z}, ...}
+    int nother = 0;
+
     for(unsigned long i = 0; i < pdg.size(); ++i)
     {
-        if(pdg[i] == 2212 && contained(track_end[i]) == true)
+        if(pdg[i] == 2212)
             nproton++;
-        if((pdg[i] == 13 || pdg[i] == -13) && mu_minerva_track_end_z > 62.0)
+        else if(pdg[i] == 13 || pdg[i] == -13)
             nmuon++;
-        if((pdg[i] == 111 || pdg[i] == 211 || pdg[i] == -211))
+        else if((pdg[i] == 111 || pdg[i] == 211 || pdg[i] == -211))
             npion++;
+        else if(prim[i] == true)
+            nother++;
     }
 
-    if((nproton >= 2) && (nmuon == 1) && (npion == 0) && contained(vtx) == true)
+    if((nproton >= 2) && (nmuon == 1) && (nother == 0) &&is_contained(vtx) == true)
+    {
+        return true;
+    }
+    return false;
+}
+/*
+Reco level cuts 
+Applied in line 561
+*/
+bool reco_cuts(std::vector<double> vtx,
+                std::vector<int> pdg,
+                std::vector<double> p,
+                std::vector<bool> prim,
+                std::vector<std::vector<double>> track_end,
+                double mu_minerva_track_end_z,
+                int max_other = 5)
+{
+    int nproton = 0;
+    int nmuon = 0;
+    int npion = 0;
+    int nother = 0;
+    // track_end = {{x, y, z}, {x, y, z}, ...}
+
+    for(unsigned long i = 0; i < pdg.size(); ++i)
+    {
+        if(pdg[i] == 2212 && is_contained(track_end[i]) == true)
+            nproton++;
+        else if((pdg[i] == 13 || pdg[i] == -13) && mu_minerva_track_end_z > 62.0)
+            nmuon++;
+        else if((pdg[i] == 111 || pdg[i] == 211 || pdg[i] == -211))
+            npion++;
+        else if(prim[i] == true)
+            nother++;
+    }
+
+    if((nproton >= 2) && (nmuon == 1) && (nother == 0) && is_contained(vtx) == true)
     {
         return true;
     }
@@ -119,28 +148,6 @@ bool reco_cuts(std::vector<double> vtx,
 
 }
 
-// Am I even returning a histogram or just a number?
-// TH1D* xsec()
-double xsec(int n_signal, int n_bg, double flux, double eff)
-{
-    double n_t = 2.825846E28;
-
-    // Calculate cross section (CHECK THIS)
-    double xsec_val = (n_signal - n_bg) / (flux * eff * n_t);
-
-
-    // Define bin information and histogram
-    // Allocate the histogram on the heap
-    TH1D* h = new TH1D("h_name", "Histogram Title", 100, 0.0, 10.0);
-    
-    // Prevent ROOT from attaching it to gDirectory (avoids automatic deletion/memory issues)
-    h->SetDirectory(nullptr); //
-    
-    // Fill or modify histogram...
-    h->Fill(5.5);
-    
-    return xsec_val;
-}
 
 /*
 Define interaction data
@@ -151,6 +158,7 @@ Output root file will have a tree with one entry = one interaction
 struct InteractionData
 {
     // Particle level reco variables
+    std::vector< bool >    reco_prim;
     std::vector< double >  reco_energy;
     std::vector< double >  reco_p_x; 
     std::vector< double >  reco_p_y; 
@@ -178,6 +186,7 @@ struct InteractionData
     double reco_vtx_z;
 
     // Particle level truth variables
+    std::vector< bool >    true_prim;
     std::vector< double >  true_energy;
     std::vector< double >  true_p_x; 
     std::vector< double >  true_p_y; 
@@ -202,9 +211,6 @@ struct InteractionData
     double true_vtx_x;
     double true_vtx_y;
     double true_vtx_z;
-    int true_nproton;
-    int true_nmuon;
-    int true_npion;
     int mode;
     double nu_momentum_x;
     double nu_momentum_y;
@@ -257,16 +263,26 @@ int caf_plotter(bool is_flat = true)
     gErrorIgnoreLevel = kError; 
     
     // Create output file
-    std::string file_name = "multip_analysis_m6.5";
+    std::string file_name = "multip_analysis_m6.5_1.4";
 
     // DEFINE: Output TFile
     TFile *f=new TFile(Form("%s.root", file_name.c_str()),"RECREATE");
 
     // Create the data object
     InteractionData data;
+
+    // Single entry variables for the output tree
+    double purity;
+    double efficiency;
+    int num_reco_pass;
+    int num_truth_pass;
+    int num_background; // Pass reco but not truth
+    int num_signal; // Pass reco and truth
+    int num_missed; // Pass truth but not reco
     
     // DEFINE: TTree and TBranches to go in output ROOT file
     TTree *fCafTree=new TTree("CafTree", "Caf reco and truth variables");
+    fCafTree->Branch("reco_prim", &data.reco_prim);
     fCafTree->Branch("reco_energy", &data.reco_energy);
     fCafTree->Branch("reco_p_x", &data.reco_p_x);
     fCafTree->Branch("reco_p_y", &data.reco_p_y);
@@ -292,6 +308,7 @@ int caf_plotter(bool is_flat = true)
     fCafTree->Branch("reco_ixn_index", &data.reco_ixn_index);
     fCafTree->Branch("reco_enu_calo", &data.reco_enu_calo);
 
+    fCafTree->Branch("true_prim", &data.true_prim);
     fCafTree->Branch("true_energy", &data.true_energy);
     fCafTree->Branch("true_p_x", &data.true_p_x);
     fCafTree->Branch("true_p_y", &data.true_p_y);
@@ -314,9 +331,6 @@ int caf_plotter(bool is_flat = true)
     fCafTree->Branch("true_track_end_y", &data.true_track_end_y);
     fCafTree->Branch("true_track_end_z", &data.true_track_end_z);
     fCafTree->Branch("true_pdg", &data.true_pdg);
-    fCafTree->Branch("true_nproton", &data.true_nproton);
-    fCafTree->Branch("true_nmuon", &data.true_nmuon);
-    fCafTree->Branch("true_npion", &data.true_npion);
     fCafTree->Branch("true_ixn_index", &data.true_ixn_index);
     fCafTree->Branch("mode", &data.mode);
     fCafTree->Branch("nu_momentum_x", &data.nu_momentum_x);
@@ -356,6 +370,15 @@ int caf_plotter(bool is_flat = true)
     fCafTree->Branch("run", &data.run);
     fCafTree->Branch("subrun", &data.subrun);
 
+    // Single variable outputs
+    fCafTree->Branch("purity", &purity);
+    fCafTree->Branch("efficiency", &efficiency);
+    fCafTree->Branch("num_reco_pass", &num_reco_pass);
+    fCafTree->Branch("num_truth_pass", &num_truth_pass);
+    fCafTree->Branch("num_background", &num_background);
+    fCafTree->Branch("num_signal", &num_signal);
+    fCafTree->Branch("num_missed", &num_missed);
+
     // Beam direction -3.343 degrees in y
     const auto beam_dir = TVector3(0, -0.05836, 1.0);
 
@@ -376,22 +399,29 @@ int caf_plotter(bool is_flat = true)
     /*
     Flux systematics information
     */
-    TFile fFlux("../fluxSyst/numiFluxSyst.root");
-    TH1D* hflux_rhc_nue=(TH1D*)fFlux.Get("flux_prediction/hflux_rhc_nue");
-    TH1D* hflux_rhc_nuebar=(TH1D*)fFlux.Get("flux_prediction/hflux_rhc_nuebar");
-    TH1D* hflux_rhc_numu=(TH1D*)fFlux.Get("flux_prediction/hflux_rhc_numu");
-    TH1D* hflux_rhc_numubar=(TH1D*)fFlux.Get("flux_prediction/hflux_rhc_numubar");
+    TFile fFlux("/global/homes/z/zaemoore/2x2_CAF/minirun/numiFluxSystFull.root");
+    auto getH = [&](const char* name) {
+        TH1D* h = (TH1D*)fFlux.Get(name);
+        if (!h) std::cerr << "Missing flux histogram: " << name << std::endl;
+        return h;
+    };
+    TH1D* hflux_fhc_nue     = getH("flux_prediction/hflux_fhc_nue");
+    TH1D* hflux_fhc_nuebar  = getH("flux_prediction/hflux_fhc_nuebar");
+    TH1D* hflux_fhc_numu    = getH("flux_prediction/hflux_fhc_numu");
+    TH1D* hflux_fhc_numubar = getH("flux_prediction/hflux_fhc_numubar");
+    TH1D* hflux_rhc_nue     = getH("flux_prediction/hflux_rhc_nue");
+    TH1D* hflux_rhc_nuebar  = getH("flux_prediction/hflux_rhc_nuebar");
+    TH1D* hflux_rhc_numu    = getH("flux_prediction/hflux_rhc_numu");
+    TH1D* hflux_rhc_numubar = getH("flux_prediction/hflux_rhc_numubar");
+
     FluxCovarianceReweight rw;
-    
-    rw.LoadBinning("../fluxSyst/flux_covariance_binning_NuMI_GeV.txt");
-    rw.LoadCovariance();
-    rw.LoadFluxHistograms(
-    hflux_rhc_nue,
-    hflux_rhc_nuebar,
-    hflux_rhc_numu,
-    hflux_rhc_numubar
-    );
-    rw.GenerateThrows(1000);
+    if (!rw.LoadBinning("../fluxSyst/flux_covariance_binning_NuMI_GeV.txt") || !rw.LoadCovariance())
+    { std::cerr << "Flux binning/covariance failed to load" << std::endl; return 1; }
+
+    rw.LoadFluxHistograms(hflux_fhc_nue, hflux_fhc_nuebar, hflux_fhc_numu, hflux_fhc_numubar,
+                        hflux_rhc_nue, hflux_rhc_nuebar, hflux_rhc_numu, hflux_rhc_numubar);
+
+    if (!rw.GenerateThrows(nUniv)) { std::cerr << "Flux throws failed" << std::endl; return 1; }
     double Phi_nom = rw.GetIntegratedFluxNominal();
 
     /*
@@ -521,23 +551,27 @@ int caf_plotter(bool is_flat = true)
                 const auto& truth_ixn = sr->mc.nu[truth_idx];
 
                 std::vector<double> vtx_vec = {vtx.x, vtx.y, vtx.z};
+                std::vector<double> truth_vtx_vec = {truth_ixn.vtx.x, truth_ixn.vtx.y, truth_ixn.vtx.z};
 
-                // If target is not argon, skip interaction
+                // If target is not argon, skip interaction (vtx cut is in reco/truth cuts)
                 if(truth_ixn.targetPDG != 1000180400)
                     continue;
-    
 
                 // Initialize vectors to hold reco particle information
                 std::vector<int> reco_pdg;
                 std::vector<double> reco_p;
+                std::vector<bool> reco_prim;
                 std::vector<std::vector<double>> reco_track_end;
                 double mu_minerva_track_end_z = -9999;
+                std::vector<int> true_pdg;
+                std::vector<bool> true_prim;
 
                 // Initialize information for the minerva track matching 
-                // Save it to fill the output root file with later
-                int minerva_idx;
-                int minerva_ixn;
-                bool minerva_match = false;
+                // Reset for every interaction, fill for each particle
+                const auto nparts = sr->common.ixn.dlp[ixn].part.dlp.size();
+                std::vector<int> minerva_idx(nparts, -9999);
+                std::vector<int> minerva_ixn(nparts, -9999);
+                std::vector<bool> minerva_match(nparts, false);
 
                 /*
                 ----------------------------------------------------------------------------------------
@@ -551,16 +585,61 @@ int caf_plotter(bool is_flat = true)
 
                     int pdg = part.pdg;
                     reco_pdg.push_back(pdg);
-                    reco_p.push_back(part.p);
+                    reco_p.push_back(TVector3(part.p.x, part.p.y, part.p.z).Mag());
                     reco_track_end.push_back({part.end.x, part.end.y, part.end.z});
+                    reco_prim.push_back(part.primary);
 
-                    // Save info for Minerva interaction track matching
+                    // Get truth particle matches for reco particle
+                    caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
+                    const auto& vec_truth_id = part.truth;
+                    const auto& vec_overlap = part.truthOverlap;
+                    bool truth_primary = false;
+
+                    // If the truth overlap vector is empty, assume no truth match and skip
+                    if(vec_overlap.empty())
+                        continue;
+
+                    // Find the truth particle with the largest overlap
+                    double current_max = 0;
+                    unsigned int max_overlap = 0;
+                    for(unsigned int i=0; i < vec_overlap.size(); i++)
+                    {
+                        auto val = vec_overlap.at(i);
+                        if(val > current_max)
+                        {
+                            current_max = val;
+                            max_overlap = i;
+                        }
+                    }
+
+                    const auto& truth_id = vec_truth_id.at(max_overlap);
+
+                    // Get pointer to the corresponding truth particle
+                    if(truth_id.type == 1)
+                    {
+                        truth_match = &(sr->mc.nu[truth_id.ixn].prim[truth_id.part]);
+                        truth_primary = true;
+                        true_pdg.push_back(truth_match->pdg);
+                        true_prim.push_back(truth_primary);
+                    }
+                    else if(truth_id.type == 3)
+                        truth_match = &(sr->mc.nu[truth_id.ixn].sec[truth_id.part]);
+                        true_pdg.push_back(truth_match->pdg);
+                        true_prim.push_back(truth_primary);
+                    else
+                    {
+                        std::cout << "Invalid truth id type!" << std::endl;
+                        continue;
+                    }  
+
+                    // Initialized per particle
+                    // This doesn't work, could be multiple minerva tracks per interaction, so I need to save the index of the matched minerva track for each reco particle
                     int ixnM;
                     int idxM; 
         
                     // Get Minerva match
                     bool minerva_track = false;
-                    // Loop over primary tracks
+                    // Loop over tracks
                     if ((abs(pdg) == 2212 || abs(pdg) == 13 || abs(pdg) == 211 || 
                         abs(pdg) == 111 || abs(pdg) == 321))
                     {
@@ -608,8 +687,6 @@ int caf_plotter(bool is_flat = true)
                                         if (dotProductTemp<0.99) continue;
                                         ixnM=sr->nd.trkmatch.extrap[k].minervaid.ixn;
                                         idxM=sr->nd.trkmatch.extrap[k].minervaid.idx; 
-                                        // rec.nd.trkmatch.extrap.minervaid.ixn
-                                        // rec.nd.trkmatch.extrap.minervaid.idx
                                         minerva_track = true;
                                     }
                                 }
@@ -620,49 +697,38 @@ int caf_plotter(bool is_flat = true)
                     if(minerva_track)
                     {
                         if(pdg == 13 || pdg == -13)
-                        {
                             mu_minerva_track_end_z = sr->nd.minerva.ixn[ixnM].tracks[idxM].end.z;
-                        }
 
-                        minerva_idx = idxM;
-                        minerva_ixn = ixnM;
-                        minerva_match = true;
+                        minerva_idx[ipart]   = idxM;
+                        minerva_ixn[ipart]   = ixnM;
+                        minerva_match[ipart] = true;
                     }
                 } // End of reco particle loop
 
                 // Check if event passes reco cuts
-                reco_passes = reco_cuts(vtx_vec, reco_pdg, reco_p, reco_track_end, mu_minerva_track_end_z);
-
+                reco_passes = reco_cuts(vtx_vec, reco_pdg, reco_p, reco_prim, reco_track_end, mu_minerva_track_end_z);
 
                 /*
                 ----------------------------------------------------------------------------------------
                 Check if event passes truth cuts
                 ----------------------------------------------------------------------------------------
                 */
-                // Count number of relevant (truth) particles
-                auto truth_nproton = 0;
-                auto truth_npion = 0;
-                auto truth_nmuon = 0;
 
-                for(unsigned long ipart = 0; ipart < truth_ixn.prim.size(); ++ipart)
-                {
-                    const auto& part = truth_ixn.prim[ipart];
-
-                    if(part.pdg == 2212) 
-                        truth_nproton++;
-
-                    if(part.pdg == 13 || part.pdg == -13) // Muon (neutrino) and anti muon (anti neutrino)
-                        truth_nmuon++;
-
-                    if(part.pdg == 111 || part.pdg == 211 || part.pdg == -211)
-                        truth_npion++;
-                }
-
-                truth_passes = truth_cuts(truth_nproton, truth_nmuon, truth_npion);
+                truth_passes = truth_cuts(truth_vtx_vec, true_pdg, true_prim);
 
                 // If interaction does not pass reco OR truth cuts, go to next interaction      
                 if(!reco_passes && !truth_passes)
                     continue;
+
+                // ----------------------------------------------------------------------------------------
+                // ----------------------------------------------------------------------------------------
+                // Count the number of events that pass 
+                // 1. Reco cuts
+                // 2. Truth cuts
+                // 3. Signal: Pass both reco and truth cuts
+                // 4. Background: Pass reco but not truth cuts
+                // ----------------------------------------------------------------------------------------
+                // ----------------------------------------------------------------------------------------
 
                 // Interaction passes, now count it as an event
                 num_events++;
@@ -682,6 +748,7 @@ int caf_plotter(bool is_flat = true)
                     caf::Proxy<caf::SRTrueParticle>* truth_match = nullptr;
                     const auto& vec_truth_id = part.truth;
                     const auto& vec_overlap = part.truthOverlap;
+                    bool truth_primary = false;
 
                     // If the truth overlap vector is empty, assume no truth match and skip
                     if(vec_overlap.empty())
@@ -704,7 +771,10 @@ int caf_plotter(bool is_flat = true)
 
                     // Get pointer to the corresponding truth particle
                     if(truth_id.type == 1)
+                    {
                         truth_match = &(sr->mc.nu[truth_id.ixn].prim[truth_id.part]);
+                        truth_primary = true;
+                    }
                     else if(truth_id.type == 3)
                         truth_match = &(sr->mc.nu[truth_id.ixn].sec[truth_id.part]);
                     else
@@ -715,10 +785,10 @@ int caf_plotter(bool is_flat = true)
 
                     // Per event flux weights
                     Double_t totalFluxWeight[1000]; // Initializes
-                    int covarIndex = rw.FindBinIndex(sr->mc.nu[truth_id.ixn].pdg, sr->mc.nu[truth_id.ixn].E);
+                    //int covarIndex = rw.FindBinIndex(sr->mc.nu[truth_id.ixn].pdg, sr->mc.nu[truth_id.ixn].E);
 
-                    if (covarIndex>-1 && covarIndex<628)
-                    rw.FillAllThrowsForBin(covarIndex, totalFluxWeight);
+                    //if (covarIndex>-1 && covarIndex<628)
+                    //rw.FillAllThrowsForBin(covarIndex, totalFluxWeight);
 
                     // Genie systematic weights for this truth interaction
                     const int genie_idx = truth_ixn.genieIdx;
@@ -763,6 +833,7 @@ int caf_plotter(bool is_flat = true)
 
                     // Population information in vectors for tracks that have passed all cuts
                     // Reco
+                    data.reco_prim.push_back(part.primary);
                     data.reco_energy.push_back(part.E);
                     data.reco_p_x.push_back(part.p.x);
                     data.reco_p_y.push_back(part.p.y);
@@ -789,6 +860,7 @@ int caf_plotter(bool is_flat = true)
                     data.reco_pdg.push_back(part.pdg);
                     data.reco_enu_calo.push_back(sr->common.ixn.dlp[ixn].Enu.calo);
                     // Truth
+                    data.true_prim.push_back(truth_primary);
                     data.true_energy.push_back(truth_match->p.E);
                     data.true_p_x.push_back(truth_match->p.px); 
                     data.true_p_y.push_back(truth_match->p.py); 
@@ -813,20 +885,17 @@ int caf_plotter(bool is_flat = true)
                     data.true_track_end_y.push_back(truth_match->end_pos.y);
                     data.true_track_end_z.push_back(truth_match->end_pos.z);
                     data.true_pdg.push_back(truth_match->pdg);
-                    data.true_nproton = (truth_nproton); //rec.mc.nu.nproton
-                    data.true_nmuon = (truth_nmuon); //rec.mc.nu.nmuon
-                    data.true_npion = (truth_npion); //rec.mc.nu.npion
                     data.mode = (sr->mc.nu[truth_id.ixn].mode); //rec.mc.nu.mode
                     data.nu_momentum_x = (sr->mc.nu[truth_id.ixn].momentum.x);
                     data.nu_momentum_y = (sr->mc.nu[truth_id.ixn].momentum.y);
                     data.nu_momentum_z = (sr->mc.nu[truth_id.ixn].momentum.z);
 
                     // Minerva
-                    if (minerva_match == true)
+                    if (minerva_match[ipart] == true) // in a reco particle loop
                     {
                         // Saved in the previous reco particle loop
-                        idxM = minerva_idx;
-                        ixnM = minerva_ixn;
+                        int idxM = minerva_idx[ipart];
+                        int ixnM = minerva_ixn[ipart];
 
                         data.minerva_track_E.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].E);
                         data.minerva_track_dir_x.push_back(sr->nd.minerva.ixn[ixnM].tracks[idxM].dir.x);
@@ -876,6 +945,9 @@ int caf_plotter(bool is_flat = true)
                 fCafTree->Fill();
             } // End of reco interaction loop
 
+            // Truth interaction loop
+            
+
         } // End of spill loop
         f->cd();
 
@@ -883,10 +955,11 @@ int caf_plotter(bool is_flat = true)
 
         caf_file->Close();
         genie_rw_file->Close();
-        flux_rw_file->Close();
+        // flux_rw_file->Close();
         delete sr;
     } // End of file loop
 
+    /*
     std::vector<double> Phi_uValues;
 
     for (int index=0; index<1000; index++)
@@ -894,6 +967,7 @@ int caf_plotter(bool is_flat = true)
         double Phi_u = rw.GetIntegratedFluxThrows()[index];
         Phi_uValues.push_back(Phi_u);
     }
+    */
     
     /*
     ----------------------------------------------------------------------------------------
@@ -916,6 +990,18 @@ int caf_plotter(bool is_flat = true)
     std::cout << "Time elapsed: " << t_elapsed.count() << std::endl;
     std::cout << "Finished." << std::endl;
     return 0;
+}
+
+double get_efficiency(int num_reco_pass, int num_truth_pass)
+{
+    // Loop through reco events and truth events separately to count the number that pass
+    // Only looking at truth matches to the reco will miss events that pass truth cuts but don't have a reco match
+    // so I need to loop through both separately
+
+    if(num_truth_pass == 0)
+        return 0.0;
+
+    return static_cast<double>(num_reco_pass) / static_cast<double>(num_truth_pass);
 }
 
 int main()

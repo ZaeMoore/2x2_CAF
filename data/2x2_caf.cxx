@@ -40,7 +40,12 @@ float dot_product(std::vector<float> vector_a, std::vector<float> vector_b) {
   return product;
 }
 
-bool contained(double x, double y, double z){
+bool contained(std::vector<double> point)
+{
+    double x = point[0];
+    double y = point[1];
+    double z = point[2];
+
     double tpc_dist = 5.0; // distance from the tpc walls for containment cuts
     double xbound = 63.931;
     double ybound = 62.076;
@@ -55,12 +60,6 @@ bool contained(double x, double y, double z){
 }
 
 
-struct PartInfo {
-    int pdg;
-    TVector3 start;
-    TVector3 end;
-};
-
 /*
 Apply full cuts
 - Counts 2+ protons, exactly 1 muon, and 0 pions
@@ -70,66 +69,37 @@ Apply full cuts
 - Requires muon to punch out the back of MINERvA
 - Fewer than max_other other particles (not p, mu, or pi)
 */
-bool cuts(const std::vector<PartInfo>& parts,
-          const TVector3& vtx,
-          double minerva_track_end_z,
-          double minerva_back_z = 62.0,
-          int max_other = 5)
+bool cuts(std::vector<double> vtx,
+                std::vector<int> pdg,
+                std::vector<double> p,
+                std::vector<std::vector<double>> track_end,
+                double mu_minerva_track_end_z,
+                int max_other = 5)
 {
-    // Vertex containment
-    if(!contained(vtx.X(), vtx.Y(), vtx.Z()))
-        return false;
-
-    int nprotons = 0, nmuons = 0, npions = 0, nother = 0;
-    std::vector<TVector3> p_starts;
-    TVector3 mu_start;
-
-    for(const auto& p : parts)
+    int nproton = 0;
+    int nmuon = 0;
+    int npion = 0;
+    int nother = 0;
+    // track_end = {{x, y, z}, {x, y, z}, ...}
+    for(unsigned long i = 0; i < pdg.size(); ++i)
     {
-        const int apdg = std::abs(p.pdg);
-
-        if(apdg == 2212)
-        {
-            // Proton must be fully contained in the TPC
-            if(!contained(p.end.X(),   p.end.Y(),   p.end.Z()))
-                return false;
-            nprotons++;
-            p_starts.push_back(p.start);
-        }
-        else if(apdg == 13)
-        {
-            nmuons++;
-            mu_start = p.start;
-        }
-        else if(apdg == 211 || p.pdg == 111)
-            npions++;
+        if(pdg[i] == 2212 && contained(track_end[i]) == true)
+            nproton++;
+        if((pdg[i] == 13 || pdg[i] == -13) && mu_minerva_track_end_z > 62.0)
+            nmuon++;
+        if((pdg[i] == 111 || pdg[i] == 211 || pdg[i] == -211))
+            npion++;
         else
             nother++;
     }
 
-    // Topology: CC1mu, 2+ protons, 0 pions
-    if(nprotons < 2 || nmuons != 1 || npions > 0)
-        return false;
+    if((nproton >= 2) && (nmuon == 1) && (npion == 0) && contained(vtx) == true && nother < max_other)
+    {
+        return true;
+    }
+    return false;
 
-    // Fewer than max_other other particles
-    if(nother >= max_other)
-        return false;
-
-    // At least 2 protons share a vertex with the muon (within 3 cm)
-    int vtx_match = 0;
-    for(const auto& ps : p_starts)
-        if((mu_start - ps).Mag() < 3.0)
-            vtx_match++;
-    if(vtx_match < 2)
-        return false;
-
-    // Muon exits the back of MINERvA
-    if(minerva_track_end_z < minerva_back_z)
-        return false;
-
-    return true;
 }
-
 /*
 Define interaction data
 This will be called at the beginning of the caf plotter function
@@ -169,6 +139,7 @@ struct InteractionData
 
 int caf_plotter(std::string file_list, bool is_flat = true)
 {
+    std::cout << "Processing file_num " << file_num << " / 1000" << std::endl;
 
     std::vector<std::string> root_list;
     std::ifstream fin(file_list, std::ios::in);
@@ -283,13 +254,9 @@ int caf_plotter(std::string file_list, bool is_flat = true)
             { // Beginning of interaction loop
                 const auto& reco_ixn = sr->common.ixn.dlp[ixn];
 
-                std::vector<PartInfo> parts;
                 for(unsigned long ipart = 0; ipart < reco_ixn.part.dlp.size(); ++ipart)
                 {
                     const auto& part = reco_ixn.part.dlp[ipart];
-                    parts.push_back({part.pdg,
-                                    TVector3(part.start.x, part.start.y, part.start.z),
-                                    TVector3(part.end.x,   part.end.y,   part.end.z)});
                 }
 
                 TVector3 vtx(reco_ixn.vtx.x, reco_ixn.vtx.y, reco_ixn.vtx.z);
