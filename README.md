@@ -15,7 +15,7 @@ Run compile.sh \
 
 NERSC:
 Enter shifter container "shifter --image=fermilab/fnal-wn-sl7:latest --module=cvmfs -- /bin/bash" \
-Run setup.sh
-Run compile.sh
+Run setup.sh \
+Run compile.sh \
 ./minirun_analysis 2> errors.log
 
